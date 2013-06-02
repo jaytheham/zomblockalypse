@@ -5,9 +5,11 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.Sys;
 
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
 
 import java.io.*;
+
+import Utils.Constants;
 
 public class Game {
 
@@ -17,6 +19,9 @@ public class Game {
     private int pId = 0;
     int mouseLastX = 0;
     int mouseLastY = 0;
+
+    private long lastFrameTime = 0;
+    private int timeDelta;
 
     //View
     Matrix4f projectionMatrix;
@@ -56,28 +61,77 @@ public class Game {
         CameraFPS camF = new CameraFPS();
 
         Player playerOne = new Player();
-        playerOne.setPosition(camF.getPosition());
-        ChunkManager chnkLord = new ChunkManager(playerOne);
+        playerOne.setPosition(camF.getPos());
+        ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
+        Collider collider = new Collider();
+
+
 
         while(!Display.isCloseRequested()) {
             Display.sync(60);
+            timeDelta = getDelta();
+
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
             GL11.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
 
-            //camMovement(cam);
-            camMoveFPS(camF);
+            playerOne.move(timeDelta);
+
+            cam.setTarget(playerOne.getPosition());
+            cam.setPositionFromTarget(new Vector3f(0.0f, 14.0f, 10.0f));
+
+            //camMoveFPS(camF);
 
             //tie player to camera
-            playerOne.setPosition(camF.getPosition());
-            chnkLord.update();
+            //playerOne.setPosition(camF.getPos());
 
-            Matrix4f.mul(projectionMatrix, camF.getMatrix(), camXprjMatrix);
-            chnkLord.render(pId, transformMatrixId, camXprjMatrix);
+
+
+            while (Mouse.next()) {
+                if (Mouse.getEventButton() == 1 && Mouse.getEventButtonState()) {
+                    try {
+                        Vector3f normTarget = new Vector3f();
+                        Vector3f.sub(cam.getTarget(), cam.getPos(), normTarget);
+                        int[] hitBlock = RayCaster.raycast(cam.getPos(), normTarget, Constants.MAX_PICK_DISTANCE);
+                        if (hitBlock != null) {
+                            hitBlock[0] += hitBlock[3];
+                            hitBlock[1] += hitBlock[4];
+                            hitBlock[2] += hitBlock[5];
+                            chunkBaron.setBlock(hitBlock, 1);
+                        }
+                    }
+                    catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                }
+            }
+            while (Keyboard.next()) {
+                if (Keyboard.getEventKey() == Keyboard.KEY_DELETE && Keyboard.getEventKeyState()) {
+                    try {
+                        Vector3f normTarget = new Vector3f();
+                        Vector3f.sub(cam.getTarget(), cam.getPos(), normTarget);
+                        int[] hitBlock = RayCaster.raycast(cam.getPos(), normTarget, Constants.MAX_PICK_DISTANCE);
+                        if (hitBlock != null)
+                            chunkBaron.deleteBlock(hitBlock);
+                    }
+                    catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                }
+            }
+
+            collider.checkBounds(playerOne);
+
+            chunkBaron.update();
+
+            Matrix4f.mul(projectionMatrix, cam.getMatrix(), camXprjMatrix);
+            chunkBaron.render(pId, transformMatrixId, camXprjMatrix);
+            playerOne.render(pId, transformMatrixId, camXprjMatrix);
 
             Display.update();
         }
 
         ChunkSaver.close();
+        ChunkLoader.close();
         Display.destroy();
     }
 
@@ -131,7 +185,7 @@ public class Game {
      */
     private int loadShader(String filename, int type) {
         StringBuilder shaderSource = new StringBuilder();
-        int shaderID = 0;
+        int shaderID;
 
         try {
             BufferedReader reader = new BufferedReader(new FileReader(filename));
@@ -158,18 +212,6 @@ public class Game {
         }
 
         return shaderID;
-    }
-
-    private void movement(TriTest tri) {
-        if (Keyboard.isKeyDown(Keyboard.KEY_A))
-            tri.changePos(-0.05f, 0.0f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_D))
-            tri.changePos(0.05f, 0.0f);
-
-        if (Keyboard.isKeyDown(Keyboard.KEY_W))
-            tri.changePos(0.0f, 0.05f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_S))
-            tri.changePos(0.0f, -0.05f);
     }
 
     private void camMoveFPS(CameraFPS cam) {
@@ -231,7 +273,17 @@ public class Game {
      * @return The system time in milliseconds
      */
     public long getTimeMillis() {
+        long t = Sys.getTimerResolution();
         return (Sys.getTime() * 1000) / Sys.getTimerResolution();
+
+    }
+
+    public int getDelta() {
+        long time = getTimeMillis();
+        int delta = (int)(time - lastFrameTime);
+        lastFrameTime = time;
+
+        return delta;
     }
 
     /**

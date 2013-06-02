@@ -49,7 +49,8 @@ public class ChunkSaver {
             c.wasSaved();
         }
         catch (IOException e) {
-            System.out.println("Failed to save file!");
+            System.out.println("Failed to save file: " + c.getPosition()[0] + " " +
+                    c.getPosition()[1] + " " + c.getPosition()[2]);
         }
     }
 }

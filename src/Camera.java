@@ -11,7 +11,7 @@ public class Camera {
         matrix = new Matrix4f();
         position = new Vector3f(1.0f, 1.0f, -1.0f);
         target =  new Vector3f(1.0f, 1.0f, -2.0f);
-        changed = false;
+        changed = true;
     }
 
     public void setPosition(Vector3f newPosition) {
@@ -35,7 +35,11 @@ public class Camera {
         changed = true;
     }
 
-    public Vector3f getPosition() {
+    /**
+     * Return the Camera's position
+     * @return A Vector3f of the Camera's position
+     */
+    public Vector3f getPos() {
         return position;
     }
 
@@ -58,6 +62,18 @@ public class Camera {
         Vector3f offset = new Vector3f(offX, offY, offZ);
         Vector3f.add(target, offset, target);
         changed = true;
+    }
+
+    public Vector3f getTarget() {
+        return target;
+    }
+
+    /**
+     * Sets the camera's position to the position (target + offset).
+     * @param offset The offset to add to the target
+     */
+    public void setPositionFromTarget(Vector3f offset) {
+        Vector3f.add(this.target, offset, this.position);
     }
 
     private void lookAt(Vector3f eye, Vector3f center, Vector3f up) {

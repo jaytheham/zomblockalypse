@@ -14,6 +14,7 @@ public class Chunk {
     private int elements;
     boolean hasChanged;
     boolean unsavedChanges;
+    private boolean isLoaded;
 
     public Chunk(float x, float y, float z) {
         blocks = new int[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH];
@@ -21,10 +22,19 @@ public class Chunk {
         vbo = GL15.glGenBuffers();
         hasChanged = true;
         unsavedChanges = false;
+        isLoaded = false;
     }
 
     public float[] getPosition() {
         return position;
+    }
+
+    public void setIsLoaded() {
+        isLoaded = true;
+    }
+
+    public boolean isLoaded() {
+        return isLoaded;
     }
 
     public int getNumBlocks() {
@@ -81,29 +91,29 @@ public class Chunk {
                     //Bottom Tris
                     //If this is bottom of chunk or block below is nothing
                     if (y - 1 < 0 || this.getBlock(x, y-1, z) == 0) {
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z + 1);
 
                         numFloatsAdded += 18;
                     }
@@ -111,29 +121,29 @@ public class Chunk {
                     //Top Tris
                     //If this is top of chunk or block above is nothing
                     if (y + 1 > 15 || this.getBlock(x, y+1, z) == 0) {
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z);
 
                         numFloatsAdded += 18;
                     }
@@ -141,29 +151,29 @@ public class Chunk {
                     //Left Tris
                     //If this is left of chunk or block left is nothing
                     if (x - 1 < 0 || this.getBlock(x-1, y, z) == 0) {
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z);
 
                         numFloatsAdded += 18;
                     }
@@ -171,29 +181,29 @@ public class Chunk {
                     //Right Tris
                     //If this is right of chunk or block right is nothing
                     if (x + 1 > 31 || this.getBlock(x+1, y, z) == 0) {
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
                         numFloatsAdded += 18;
                     }
@@ -201,29 +211,29 @@ public class Chunk {
                     //Back Tris
                     //If this is back of chunk or block behind is nothing
                     if (z - 1 < 0 || this.getBlock(x, y, z-1) == 0) {
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z);
 
                         numFloatsAdded += 18;
                     }
@@ -231,29 +241,29 @@ public class Chunk {
                     //Front Tris
                     //If this is front of chunk or block ahead is nothing
                     if (z + 1 > 31 || this.getBlock(x, y, z+1) == 0) {
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x + 1);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x + 1);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y + 1);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y + 1);
+                        vertBuf.put(this.position[2] + z + 1);
 
-                        vertBuf.put((float)this.position[0] + x);
-                        vertBuf.put((float)this.position[1] + y);
-                        vertBuf.put((float)this.position[2] + z + 1);
+                        vertBuf.put(this.position[0] + x);
+                        vertBuf.put(this.position[1] + y);
+                        vertBuf.put(this.position[2] + z + 1);
 
                         numFloatsAdded += 18;
                     }

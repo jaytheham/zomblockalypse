@@ -1,6 +1,6 @@
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,23 +33,18 @@ public class ChunkLoader {
                 (int)c.getPosition()[1] + "_" +
                 (int)c.getPosition()[2] + ".cnk";
         try {
-            FileOutputStream fos = new FileOutputStream(fileName);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            DataOutputStream dos = new DataOutputStream(bos);
+            FileInputStream fis = new FileInputStream(fileName);
+            BufferedInputStream bis = new BufferedInputStream(fis);
+            DataInputStream dis = new DataInputStream(bis);
 
-            int[] blocks = c.getBlocks();
-
-            for (int i : blocks) {
-                dos.writeInt(i);
+            for (int i = 0; i < c.getNumBlocks(); i++) {
+                c.setBlock(i, dis.readInt());
             }
-            dos.close();
-            bos.close();
-            fos.close();
-
-            c.wasSaved();
+            c.setIsLoaded();
         }
         catch (IOException e) {
-            System.out.println("Failed to save file!");
+            System.out.println("Failed to load file: " + c.getPosition()[0] + " " +
+            c.getPosition()[1] + " " + c.getPosition()[2]);
         }
     }
 }
