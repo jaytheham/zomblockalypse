@@ -1,6 +1,5 @@
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Matrix4f;
 
 import java.nio.FloatBuffer;
 
@@ -8,12 +7,13 @@ public class Chunk {
 
     public static final int CHUNK_WIDTH = 32;
     public static final int CHUNK_HEIGHT = 16;
+
     private float[] position;
     private int[] blocks;
     private int vbo;
     private int elements;
-    boolean hasChanged;
-    boolean unsavedChanges;
+    private boolean hasChanged;
+    private boolean unsavedChanges;
     private boolean isLoaded;
 
     public Chunk(float x, float y, float z) {
@@ -279,17 +279,11 @@ public class Chunk {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
     }
 
-    public void render(int programId, int uniformMatrixId, Matrix4f perspectiveMatrix) {
+    public void render() {
+
         if (hasChanged) {
             this.update();
         }
-        FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
-        perspectiveMatrix.store(matrixBuffer);
-        matrixBuffer.flip();
-
-        GL20.glUseProgram(programId);
-
-        GL20.glUniformMatrix4(uniformMatrixId, false, matrixBuffer);
 
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
         GL20.glEnableVertexAttribArray(0);
@@ -299,7 +293,7 @@ public class Chunk {
 
         GL20.glDisableVertexAttribArray(0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        GL20.glUseProgram(0);
+
 
     }
 }

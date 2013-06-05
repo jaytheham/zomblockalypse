@@ -1,5 +1,9 @@
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+
+import java.nio.FloatBuffer;
 
 public class ChunkManager {
 
@@ -39,8 +43,7 @@ public class ChunkManager {
     public void update() {
         int[] playerNewChunk = new int[3];
         int xChange, yChange, zChange;
-        //This is used as a buffer so no need to null any chunks
-        loadedChunksBackBuffer = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
+
 
         playerNewChunk[0] = (int)Math.floor(this.player.getX() / Chunk.CHUNK_WIDTH);
         playerNewChunk[1] = (int)Math.floor(this.player.getY() / Chunk.CHUNK_HEIGHT);
@@ -57,6 +60,9 @@ public class ChunkManager {
         if (xChange < -1 || xChange > 1
                 || zChange < -1 || zChange > 1
                 || yChange < -1 || yChange > 1) {
+
+            //This is used as a buffer so no need to null any chunks
+            loadedChunksBackBuffer = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
             this.centerChunk[0] = playerNewChunk[0];
             this.centerChunk[1] = playerNewChunk[1];
@@ -251,17 +257,17 @@ public class ChunkManager {
             for (int z = 0; z < CHUNKS_WIDE; z++) {
                 for (int y = 0; y < CHUNKS_HIGH; y++) {
 
-                    if (getChunkLoadedCoords(x, y, z) == null) {
+                    if (this.getChunkLoadedCoords(x, y, z) == null) {
 
                         loadedChunks[
-                                x +
+                                 x +
                                 (z * CHUNKS_WIDE) +
                                 (y * CHUNKS_WIDE * CHUNKS_WIDE)]
                                 = this.loadChunk(
                                 x - (CHUNKS_WIDE/2),
                                 y - (CHUNKS_HIGH/2),
                                 z - (CHUNKS_WIDE/2),
-                                playerChunk);
+                                this.playerChunk);
                         i++;
                         if (i == maxChunksToLoad)
                             break;
@@ -296,10 +302,21 @@ public class ChunkManager {
         }
     }
 
-    public void render(int a, int b, Matrix4f d) {
+    public void render(int programId, int uniformMatrixId, Matrix4f perspectiveMatrix) {
+
+        FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
+        perspectiveMatrix.store(matrixBuffer);
+        matrixBuffer.flip();
+
+        GL20.glUseProgram(programId);
+
+        GL20.glUniformMatrix4(uniformMatrixId, false, matrixBuffer);
+
         for (Chunk c : loadedChunks) {
             if (c != null && c.isLoaded())
-                c.render(a,b,d);
+                c.render();
         }
+
+        GL20.glUseProgram(0);
     }
 }

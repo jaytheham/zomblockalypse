@@ -21,72 +21,63 @@ public class Player implements Collidable{
     private final float SINGLE_AXIS_DECELERATION = 0.20f;
 
     private Vector3f moveDirection;
-    private float speed;
 
     private int vbo;
     private FloatBuffer matrixBuffer;
 
     public Player() {
-        position = new Vector3f(0.0f, 2.0f, 0.0f);
-        nextPosition = new Vector3f(0.0f, 0.0f, 0.0f);
+        position = new Vector3f(0.0f, 1.0f, 1.0f);
+        nextPosition = new Vector3f(0.0f, 1.0f, 1.0f);
         moveDirection = new Vector3f(0.0f, 0.0f, 0.0f);
         boundingBoxSize = new Vector3f(1.0f, 5.0f, 1.0f);
 
         vbo = GL15.glGenBuffers();
         
-        FloatBuffer vertBuf = BufferUtils.createFloatBuffer(36);
+        FloatBuffer vertBuf = BufferUtils.createFloatBuffer(30);
         matrixBuffer = BufferUtils.createFloatBuffer(16);
         
         int i = 0;
         
+        vertBuf.put(0.0f);
+        vertBuf.put(0.0f);
+        vertBuf.put(0.0f);
+
+        vertBuf.put(0.0f);
+        vertBuf.put(5.0f);
+        vertBuf.put(0.0f);
+
+
+        vertBuf.put(0.5f);
+        vertBuf.put(0.0f);
+        vertBuf.put(0.5f);
+
+        vertBuf.put(-0.5f);
+        vertBuf.put(0.0f);
+        vertBuf.put(-0.5f);
+
         vertBuf.put(-0.5f);
         vertBuf.put(0.0f);
         vertBuf.put(0.5f);
 
         vertBuf.put(0.5f);
         vertBuf.put(0.0f);
-        vertBuf.put(0.5f);
-
-        vertBuf.put(0.5f);
-        vertBuf.put(5.0f);
-        vertBuf.put(0.5f);
-
-
         vertBuf.put(-0.5f);
-        vertBuf.put(0.0f);
-        vertBuf.put(0.5f);
+
 
         vertBuf.put(0.5f);
-        vertBuf.put(5.0f);
+        vertBuf.put(1.0f);
         vertBuf.put(0.5f);
 
         vertBuf.put(-0.5f);
-        vertBuf.put(5.0f);
-        vertBuf.put(0.5f);
-
-
-        vertBuf.put(-0.5f);
-        vertBuf.put(0.1f);
-        vertBuf.put(0.5f);
-
-        vertBuf.put(0.5f);
-        vertBuf.put(0.1f);
-        vertBuf.put(0.5f);
-
-        vertBuf.put(0.5f);
-        vertBuf.put(0.1f);
+        vertBuf.put(1.0f);
         vertBuf.put(-0.5f);
 
         vertBuf.put(-0.5f);
-        vertBuf.put(0.1f);
+        vertBuf.put(1.0f);
         vertBuf.put(0.5f);
 
         vertBuf.put(0.5f);
-        vertBuf.put(0.1f);
-        vertBuf.put(-0.5f);
-
-        vertBuf.put(-0.5f);
-        vertBuf.put(0.1f);
+        vertBuf.put(1.0f);
         vertBuf.put(-0.5f);
 
         vertBuf.flip();
@@ -129,7 +120,7 @@ public class Player implements Collidable{
         if (Math.abs(this.moveDirection.x) + Math.abs(this.moveDirection.z) > 1.45f)
             this.moveDirection.normalise(this.moveDirection);
 
-        //this.moveDirection.y -= ACCELERATION;wdwdwd
+        //this.moveDirection.y -= ACCELERATION;
 
 
         this.nextPosition.x += moveDirection.x * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f));
@@ -138,7 +129,9 @@ public class Player implements Collidable{
     }
 
     public void setPosition(Vector3f newPosition) {
-        position = newPosition;
+        position.x = newPosition.getX();
+        position.y = newPosition.getY();
+        position.z = newPosition.getZ();
     }
 
     public Vector3f getPosition() {
@@ -147,6 +140,12 @@ public class Player implements Collidable{
 
     public Vector3f getNextPosition() {
         return  nextPosition;
+    }
+
+    public void setNextPosition(Vector3f pos) {
+        nextPosition.x = pos.getX();
+        nextPosition.y = pos.getY();
+        nextPosition.z = pos.getZ();
     }
 
     public float getX() {
@@ -182,7 +181,7 @@ public class Player implements Collidable{
         GL20.glEnableVertexAttribArray(0);
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
 
-        GL11.glDrawArrays(GL11.GL_LINE_LOOP, 0, 12);
+        GL11.glDrawArrays(GL11.GL_LINES, 0, 10);
 
         GL20.glDisableVertexAttribArray(0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);

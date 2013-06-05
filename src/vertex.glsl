@@ -1,11 +1,11 @@
 #version 150 core
 
 in vec3 in_Position;
-in vec3 in_Color;
+//in vec3 in_Color;
 
 uniform mat4 transformMatrix;
 
-flat out vec4 pass_Color;
+out vec4 pass_Color;
 
 void main(void) {
     gl_Position = transformMatrix * vec4(in_Position, 1.0f);
@@ -24,7 +24,7 @@ void main(void) {
 
     a = (mod(in_Position.x, 32.0f)/32);
     b = (mod(in_Position.z, 32.0f)/32);
-    c = (mod(in_Position.x, 2.0f)/2);
+    c = (mod(in_Position.y, 2.0f)/2);
 
 
     pass_Color = vec4(a, b, c, 1.0f);

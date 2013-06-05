@@ -61,7 +61,7 @@ public class Game {
         CameraFPS camF = new CameraFPS();
 
         Player playerOne = new Player();
-        playerOne.setPosition(camF.getPos());
+        //playerOne.setPosition(camF.getPos());
         ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
         Collider collider = new Collider();
 

@@ -1,4 +1,5 @@
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector2f;
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,22 +17,62 @@ public class Collider {
     public void checkBounds(Player p) {
         ChunkManager c = ChunkManager.getInstance(null);
 
-        Vector3f pos = new Vector3f(p.getNextPosition());
-        Vector3f bounds = p.getBoundingBoxSize();
+        Vector3f curPos = p.getPosition();
+        Vector3f nextPos = new Vector3f(p.getNextPosition());
+        Vector3f bounds = new Vector3f(p.getBoundingBoxSize());
 
-        //if (pos.z < 0.0f)
-        //    pos.z -= 1.0f;
-        if (pos.z > 0)
-            pos.z += bounds.z;
-        else
-            pos.z -= bounds.z;
+        if (nextPos.x < 0.0f)
+            nextPos.x -= 1;
 
-        if (c.getBlock(pos) == 0) {
-            p.setPosition(p.getNextPosition());
+        if (nextPos.z < 0.0f)
+            nextPos.z -= 1;
+
+        Vector2f lowerBound = new Vector2f(nextPos.x - (bounds.x/2), nextPos.z - (bounds.z/2));
+        Vector2f upperBound = new Vector2f(nextPos.x + (bounds.x/2), nextPos.z + (bounds.z/2));
+
+        boolean hitBlock = false;
+
+        for (int x = (int)lowerBound.x; x <= (int)upperBound.x; x++) {
+            for (int z = (int)lowerBound.y; z <= (int)upperBound.y; z++) {
+                if (c.getBlock(x, (int)nextPos.y, z) != 0) {
+                    hitBlock = true;
+                    break;
+                }
+            }
+        }
+
+        if (hitBlock) {
+            hitBlock = false;
+            for (int x = (int)lowerBound.x; x <= (int)upperBound.x; x++) {
+                if (c.getBlock(x, (int)curPos.y, (int)curPos.z) != 0) {
+                    hitBlock = true;
+                    break;
+                }
+            }
+
+            if (hitBlock) {
+                hitBlock = false;
+                for (int z = (int)lowerBound.y; z <= (int)upperBound.y; z++) {
+                    if (c.getBlock((int)curPos.x, (int)curPos.y, z) != 0) {
+                        hitBlock = true;
+                        break;
+                    }
+                }
+
+                if (!hitBlock) {
+                    p.setPosition(new Vector3f(curPos.x, curPos.y, p.getNextPosition().z));
+                }
+            }
+            else {
+                p.setPosition(new Vector3f(p.getNextPosition().x, curPos.y, curPos.z));
+            }
+
+            p.setNextPosition(new Vector3f(p.getX(), p.getY(), p.getZ()));
         }
         else {
-            System.out.println(c.getBlock(pos));
+            p.setPosition(p.getNextPosition());
         }
+
     }
 
 }
