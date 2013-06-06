@@ -16,6 +16,12 @@ public class Chunk {
     private boolean unsavedChanges;
     private boolean isLoaded;
 
+    /**
+     * Looking at the chunk from above
+     * @param x The X position of the top left corner, a multiple of CHUNK_WIDTH
+     * @param y Multiple of CHUNK_HEIGHT
+     * @param z The Z position of the top left corner, a multiple of CHUNK_WIDTH
+     */
     public Chunk(float x, float y, float z) {
         blocks = new int[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH];
         position = new float[] {x, y, z};
@@ -41,6 +47,13 @@ public class Chunk {
         return blocks.length;
     }
 
+    /**
+     * Get the block at these (chunk relative) coordinates
+     * @param x X Position in the block
+     * @param y Y Position in the block
+     * @param z Z Position in the block
+     * @return The int value of the block
+     */
     public int getBlock(int x, int y, int z) {
         return blocks[   x +
                         (y * CHUNK_WIDTH * CHUNK_WIDTH) +

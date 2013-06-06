@@ -1,78 +1,96 @@
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector2f;
 
-/**
- * Created with IntelliJ IDEA.
- * User: Jay
- * Date: 2/06/13
- * Time: 6:27 PM
- * To change this template use File | Settings | File Templates.
- */
 public class Collider {
 
     public Collider() {
 
     }
 
-    public void checkBounds(Player p) {
+    public void collide(Player p) {
         ChunkManager c = ChunkManager.getInstance(null);
 
-        Vector3f curPos = p.getPosition();
-        Vector3f nextPos = new Vector3f(p.getNextPosition());
-        Vector3f bounds = new Vector3f(p.getBoundingBoxSize());
+        Vector3f pos = p.getPosition();
+        Vector3f nPos = new Vector3f(p.getNextPosition());
+        Vector3f bnds = new Vector3f(p.getBoundingBoxSize());
+        Vector2f reduce = new Vector2f();
 
-        if (nextPos.x < 0.0f)
-            nextPos.x -= 1;
+        // if next position not valid
+        while (c.getBlock(nPos) != 0 && c.getBlock(pos) == 0) { //Each loop should get the original nPos to stop sticking at block boundaries
+         // Find side of intersection
+            float x = 0;
+            float z = 0;
+            if (pos.x < nPos.x)
+                x = 0.0f; // On left of block
+            else
+                x = 1.0f; // On right of block
 
-        if (nextPos.z < 0.0f)
-            nextPos.z -= 1;
+            if (pos.z < nPos.z)
+                z = 0.0f; // Behind block
+            else
+                z = 1.0f; // In front of block
 
-        Vector2f lowerBound = new Vector2f(nextPos.x - (bounds.x/2), nextPos.z - (bounds.z/2));
-        Vector2f upperBound = new Vector2f(nextPos.x + (bounds.x/2), nextPos.z + (bounds.z/2));
+            Vector2f blockXSideA = new Vector2f((int)Math.floor(nPos.x) + x, (int)Math.floor(nPos.z));
+            //Vector2f blockXSideB = new Vector2f((int)Math.floor(nPos.x) + x, (int)Math.floor(nPos.z) + 1.0f);
+            Vector2f blockXSideB = new Vector2f(0.0f, 1.0f);
 
-        boolean hitBlock = false;
-
-        for (int x = (int)lowerBound.x; x <= (int)upperBound.x; x++) {
-            for (int z = (int)lowerBound.y; z <= (int)upperBound.y; z++) {
-                if (c.getBlock(x, (int)nextPos.y, z) != 0) {
-                    hitBlock = true;
-                    break;
-                }
-            }
-        }
-
-        if (hitBlock) {
-            hitBlock = false;
-            for (int x = (int)lowerBound.x; x <= (int)upperBound.x; x++) {
-                if (c.getBlock(x, (int)curPos.y, (int)curPos.z) != 0) {
-                    hitBlock = true;
-                    break;
-                }
-            }
-
-            if (hitBlock) {
-                hitBlock = false;
-                for (int z = (int)lowerBound.y; z <= (int)upperBound.y; z++) {
-                    if (c.getBlock((int)curPos.x, (int)curPos.y, z) != 0) {
-                        hitBlock = true;
-                        break;
-                    }
-                }
-
-                if (!hitBlock) {
-                    p.setPosition(new Vector3f(curPos.x, curPos.y, p.getNextPosition().z));
-                }
+            if (linesIntersect(blockXSideA, blockXSideB, new Vector2f(pos.x, pos.z),
+                    new Vector2f(nPos.x-pos.x,nPos.z-pos.z))) {
+                // Hit x face
+                nPos.x = (float)Math.floor(nPos.x) + x;
+                if (x == 0.0f)
+                    nPos.x-=0.01f;
+                else
+                    nPos.x += 0.01f;
             }
             else {
-                p.setPosition(new Vector3f(p.getNextPosition().x, curPos.y, curPos.z));
+                // must have hit z face
+                nPos.z = (float)Math.floor(nPos.z) + z;
+                if (z == 0.0f)
+                    nPos.z -=0.01f;
+                else
+                    nPos.z += 0.01f;
             }
 
-            p.setNextPosition(new Vector3f(p.getX(), p.getY(), p.getZ()));
+         // Reduce next based on intersected side
+         // repeat
+        }
+        // else accept move
+        p.setPosition(nPos);
+    }
+/*
+    private boolean validMove(Vector3f nextPos) {
+
+
+        if (c.getBlock(nextPos) != 0) {
+            return true;
         }
         else {
-            p.setPosition(p.getNextPosition());
+            return false;
         }
 
     }
+*/
 
+    public boolean linesIntersect(Vector2f p, Vector2f r, Vector2f q, Vector2f s) {
+
+        float RcS = (r.x*s.y) - (r.y*s.x);
+
+        if (RcS == 0.0f)
+            return false; //Lines are parallel
+
+        Vector2f a = new Vector2f();
+
+        Vector2f.sub(q, p, a);
+        float QPcS = (a.x*s.y) - (a.y*s.x);
+
+        float t = QPcS/RcS;
+
+        // If this is 0 lines are collinear
+        float QPcR = (a.x*r.y) - (a.y*r.x);
+
+        float u = QPcR/RcS;
+
+        return (t >= 0.0f) && (t <=1.0f) && (u >= 0.0f) && (u <= 1.0f);
+    }
 }

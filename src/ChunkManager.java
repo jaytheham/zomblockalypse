@@ -210,13 +210,13 @@ public class ChunkManager {
     }
 
     public int getBlock(Vector3f p) {
-        return getBlock((int)p.x, (int)p.y, (int)p.z);
+        return getBlock((int)Math.floor(p.x), (int)Math.floor(p.y), (int)Math.floor(p.z));
     }
 
     public void setBlock(Vector3f p, int newBlockVal) {
         if (p == null)
             return;
-        this.setBlock((int)p.x, (int)p.y, (int)p.z, newBlockVal);
+        this.setBlock((int)Math.floor(p.x), (int)Math.floor(p.y), (int)Math.floor(p.z), newBlockVal);
     }
 
     public void setBlock(int[] p, int newBlockVal) {

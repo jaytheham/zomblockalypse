@@ -26,8 +26,8 @@ public class Player implements Collidable{
     private FloatBuffer matrixBuffer;
 
     public Player() {
-        position = new Vector3f(0.0f, 1.0f, 1.0f);
-        nextPosition = new Vector3f(0.0f, 1.0f, 1.0f);
+        position = new Vector3f(2.0f, 1.0f, 2.0f);
+        nextPosition = new Vector3f(2.0f, 1.0f, 2.0f);
         moveDirection = new Vector3f(0.0f, 0.0f, 0.0f);
         boundingBoxSize = new Vector3f(1.0f, 5.0f, 1.0f);
 
@@ -122,10 +122,13 @@ public class Player implements Collidable{
 
         //this.moveDirection.y -= ACCELERATION;
 
+        this.nextPosition.x = this.position.x;
+        this.nextPosition.y = this.position.y;
+        this.nextPosition.z = this.position.z;
 
         this.nextPosition.x += moveDirection.x * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f));
         this.nextPosition.z += moveDirection.z * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f));
-        this.nextPosition.y = this.position.y;
+
     }
 
     public void setPosition(Vector3f newPosition) {
@@ -139,7 +142,7 @@ public class Player implements Collidable{
     }
 
     public Vector3f getNextPosition() {
-        return  nextPosition;
+        return nextPosition;
     }
 
     public void setNextPosition(Vector3f pos) {

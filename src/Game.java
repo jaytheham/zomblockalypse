@@ -5,6 +5,7 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.Sys;
 
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.io.*;
@@ -65,6 +66,10 @@ public class Game {
         ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
         Collider collider = new Collider();
 
+        //collider.linesIntersect(new Vector2f(0.0f,0.0f), new Vector2f(0.1f,0.1f),
+        //        new Vector2f(0.5f,0.0f), new Vector2f(0.0f,1.0f));
+
+        System.out.println((int)-0.6f);
 
 
         while(!Display.isCloseRequested()) {
@@ -78,6 +83,9 @@ public class Game {
 
             cam.setTarget(playerOne.getPosition());
             cam.setPositionFromTarget(new Vector3f(0.0f, 14.0f, 10.0f));
+
+            Vector3f line = new Vector3f(2, 4, 0);
+            Vector3f face = new Vector3f(10, 0, 0);
 
             //camMoveFPS(camF);
 
@@ -119,7 +127,7 @@ public class Game {
                 }
             }
 
-            collider.checkBounds(playerOne);
+            collider.collide(playerOne);
 
             chunkBaron.update();
 
