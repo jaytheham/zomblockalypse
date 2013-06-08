@@ -12,13 +12,17 @@ public class Player implements Collidable{
 
     private Vector3f position;
     private Vector3f nextPosition;
+    private float rotation; //0 degrees = -z axis
+    private float velocity;
+
+    public final int STEP = 1;
+    public final int CLIMB = 6;
 
     private Vector3f boundingBoxSize;
 
     private final float MOVE_UNITS_PER_SECOND = 12.0f;
-    private final float ACCELERATION = 0.05f;
-    private final float DECELERATION = 0.75f;
-    private final float SINGLE_AXIS_DECELERATION = 0.20f;
+    private final float ACCELERATION = 0.02f;
+    private final float DECELERATION = 0.05f;
 
     private Vector3f moveDirection;
 
@@ -28,6 +32,8 @@ public class Player implements Collidable{
     public Player() {
         position = new Vector3f(2.0f, 1.0f, 2.0f);
         nextPosition = new Vector3f(2.0f, 1.0f, 2.0f);
+        rotation = 0.0f;
+        velocity = 0.0f;
         moveDirection = new Vector3f(0.0f, 0.0f, 0.0f);
         boundingBoxSize = new Vector3f(1.0f, 5.0f, 1.0f);
 
@@ -64,20 +70,20 @@ public class Player implements Collidable{
         vertBuf.put(-0.5f);
 
 
-        vertBuf.put(0.5f);
+        vertBuf.put(0.0f);
         vertBuf.put(1.0f);
-        vertBuf.put(0.5f);
+        vertBuf.put(0.0f);
 
-        vertBuf.put(-0.5f);
+        vertBuf.put(0.0f);
         vertBuf.put(1.0f);
         vertBuf.put(-0.5f);
 
-        vertBuf.put(-0.5f);
-        vertBuf.put(1.0f);
-        vertBuf.put(0.5f);
+        vertBuf.put(0.0f);
+        vertBuf.put(3.0f);
+        vertBuf.put(0.0f);
 
-        vertBuf.put(0.5f);
-        vertBuf.put(1.0f);
+        vertBuf.put(0.0f);
+        vertBuf.put(3.0f);
         vertBuf.put(-0.5f);
 
         vertBuf.flip();
@@ -87,48 +93,88 @@ public class Player implements Collidable{
     }
 
     public void move(int timeDelta) {
-        if (Keyboard.isKeyDown(Keyboard.KEY_A) && this.moveDirection.x > -1.0f) {
-            this.moveDirection.x -= ACCELERATION;
+        float destinationAngle = -1.0f;
+
+        if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+            if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+                destinationAngle = 45.0f;
+            }
+            else if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+                destinationAngle = 315.0f;
+            }
+            else {
+                destinationAngle = 0.0f;
+            }
         }
-        else if (Keyboard.isKeyDown(Keyboard.KEY_D) && this.moveDirection.x < 1.0f) {
-            this.moveDirection.x += ACCELERATION;
+        else if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+            if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+                destinationAngle = 225.0f;
+            }
+            else if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+                destinationAngle = 135.0f;
+            }
+            else {
+                destinationAngle = 180.0f;
+            }
+        }
+        else if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+            destinationAngle = 90.0f;
+        }
+        else if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+            destinationAngle = 270.0f;
+        }
+
+        if (destinationAngle >= 0.0f) {
+            float turnDirection = 22.5f;
+            float angle = destinationAngle - rotation;
+            if (angle < 0.0f)
+                turnDirection = -22.5f;
+            if (angle > 180.0f || angle < -180.0f)
+                turnDirection *= -1;
+
+            if (rotation != destinationAngle) {
+                rotation += turnDirection;
+                if (rotation < 0.0f)
+                    rotation += 360.0f;
+                else if (rotation > 360.0f)
+                    rotation -= 360.0f;
+            }
+        }
+
+        if (Keyboard.isKeyDown(Keyboard.KEY_A) || Keyboard.isKeyDown(Keyboard.KEY_D) ||
+                Keyboard.isKeyDown(Keyboard.KEY_W) || Keyboard.isKeyDown(Keyboard.KEY_S)) {
+            velocity += ACCELERATION;
+            if (velocity > 1.0f) {
+                velocity = 1.0f;
+            }
+        }
+        else if (velocity > 0.0f) {
+            velocity -= DECELERATION;
         }
         else {
-            if (Keyboard.isKeyDown(Keyboard.KEY_W) || Keyboard.isKeyDown(Keyboard.KEY_S))
-                this.moveDirection.x *= (DECELERATION + SINGLE_AXIS_DECELERATION);
-            else
-                this.moveDirection.x *= DECELERATION;
-            if (Math.abs(this.moveDirection.x) < 0.001)
-                this.moveDirection.x = 0.0f;
+            velocity = 0.0f;
         }
 
-        if (Keyboard.isKeyDown(Keyboard.KEY_W) && this.moveDirection.z > -1.0f) {
-            this.moveDirection.z -= ACCELERATION;
-        }
-        else if (Keyboard.isKeyDown(Keyboard.KEY_S) && this.moveDirection.z < 1.0f) {
-            this.moveDirection.z += ACCELERATION;
-        }
-        else {
-            if (Keyboard.isKeyDown(Keyboard.KEY_A) || Keyboard.isKeyDown(Keyboard.KEY_D))
-                this.moveDirection.z *= (DECELERATION + SINGLE_AXIS_DECELERATION);
-            else
-                this.moveDirection.z *= DECELERATION;
-            if (Math.abs(this.moveDirection.z) < 0.001)
-                this.moveDirection.z = 0.0f;
-        }
+        double radians = Math.toRadians(rotation);
 
-        if (Math.abs(this.moveDirection.x) + Math.abs(this.moveDirection.z) > 1.45f)
-            this.moveDirection.normalise(this.moveDirection);
+        moveDirection.x = (float)Math.sin(radians);
+        moveDirection.z = (float)Math.cos(radians);
+        moveDirection.z *= -1;
 
-        //this.moveDirection.y -= ACCELERATION;
+        moveDirection.scale(velocity * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f)));
 
         this.nextPosition.x = this.position.x;
-        this.nextPosition.y = this.position.y;
+        this.nextPosition.y = this.position.y - 0.1f; //Gravity
         this.nextPosition.z = this.position.z;
 
-        this.nextPosition.x += moveDirection.x * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f));
-        this.nextPosition.z += moveDirection.z * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f));
+        this.nextPosition.x += moveDirection.x;// * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f));
+        this.nextPosition.z += moveDirection.z;// * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f));
 
+    }
+
+    // This should be a function of the angle at which the collision took place
+    public void collided() {
+        velocity -= DECELERATION;
     }
 
     public void setPosition(Vector3f newPosition) {
@@ -170,7 +216,9 @@ public class Player implements Collidable{
     public void render(int programId, int uniformMatrixId, Matrix4f perspectiveMatrix) {
 
         Matrix4f worldMatrix = new Matrix4f();
+
         worldMatrix.translate(position);
+        worldMatrix.rotate((float)Math.toRadians((double)-rotation), new Vector3f(0.0f, 1.0f, 0.0f));
         Matrix4f.mul(perspectiveMatrix, worldMatrix, worldMatrix);
         matrixBuffer.position(0);
         worldMatrix.store(matrixBuffer);

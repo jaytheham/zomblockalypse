@@ -3,6 +3,8 @@ import org.lwjgl.util.vector.Vector2f;
 
 public class Collider {
 
+    public static final int STEP_UP_ONE_BLOCK = 1;
+
     public Collider() {
 
     }
@@ -15,62 +17,83 @@ public class Collider {
         Vector3f bnds = new Vector3f(p.getBoundingBoxSize());
         Vector2f reduce = new Vector2f();
 
-        // if next position not valid
-        while (c.getBlock(nPos) != 0 && c.getBlock(pos) == 0) { //Each loop should get the original nPos to stop sticking at block boundaries
-         // Find side of intersection
-            float x = 0;
-            float z = 0;
-            if (pos.x < nPos.x)
-                x = 0.0f; // On left of block
-            else
-                x = 1.0f; // On right of block
+        boolean collided = false;
 
-            if (pos.z < nPos.z)
-                z = 0.0f; // Behind block
-            else
-                z = 1.0f; // In front of block
+        //Each loop should get the original nPos to stop sticking at block boundaries
+        // while nPos == block
+        outerLoop : while (c.getBlock(nPos) != 0 && c.getBlock(pos) == 0) {
 
-            Vector2f blockXSideA = new Vector2f((int)Math.floor(nPos.x) + x, (int)Math.floor(nPos.z));
-            //Vector2f blockXSideB = new Vector2f((int)Math.floor(nPos.x) + x, (int)Math.floor(nPos.z) + 1.0f);
-            Vector2f blockXSideB = new Vector2f(0.0f, 1.0f);
-
-            if (linesIntersect(blockXSideA, blockXSideB, new Vector2f(pos.x, pos.z),
-                    new Vector2f(nPos.x-pos.x,nPos.z-pos.z))) {
-                // Hit x face
-                nPos.x = (float)Math.floor(nPos.x) + x;
-                if (x == 0.0f)
-                    nPos.x-=0.01f;
-                else
-                    nPos.x += 0.01f;
+            // faulty:
+            if (!collided) {
+                nPos.y = pos.y;
             }
-            else {
-                // must have hit z face
-                nPos.z = (float)Math.floor(nPos.z) + z;
-                if (z == 0.0f)
-                    nPos.z -=0.01f;
-                else
-                    nPos.z += 0.01f;
-            }
+            if (c.getBlock(nPos) == 0)
+                break;
 
-         // Reduce next based on intersected side
-         // repeat
+        // If step > 0, for s in 1->step
+            for (int i = 1; i <= p.STEP; i++) {
+                // if test position (nPos + i) == OK
+                if (c.getBlock(nPos.x, nPos.y + i, nPos.z) == 0) {
+                    // return nPos + i
+                    nPos.y = (float)(Math.floor((double)nPos.y) + i + 0.01f);
+                    break outerLoop;
+                }
+            }
+        // If climb > 0, for c in step -> climb
+            for (int i = p.STEP; i <= p.CLIMB; i++) {
+                // if test position (nPos + i) == OK
+                // Perform climbing
+                // return
+                continue;
+            }
+        // nPos slide and retry
+            nPos = rejectCollidingVectorSegment(pos, nPos);
+            collided = true;
         }
-        // else accept move
+
+        // accept move
         p.setPosition(nPos);
+
+        if (collided)
+            p.collided();
     }
-/*
-    private boolean validMove(Vector3f nextPos) {
 
+    private Vector3f rejectCollidingVectorSegment(Vector3f pos, Vector3f nPos) {
 
-        if (c.getBlock(nextPos) != 0) {
-            return true;
+        float x = 0;
+        float z = 0;
+        if (pos.x < nPos.x)
+            x = 0.0f; // On left of block
+        else
+            x = 1.0f; // On right of block
+
+        if (pos.z < nPos.z)
+            z = 0.0f; // Behind block
+        else
+            z = 1.0f; // In front of block
+
+        Vector2f blockXSideA = new Vector2f((int)Math.floor(nPos.x) + x, (int)Math.floor(nPos.z));
+        Vector2f blockXSideB = new Vector2f(0.0f, 1.0f);
+
+        if (linesIntersect(blockXSideA, blockXSideB, new Vector2f(pos.x, pos.z),
+                new Vector2f(nPos.x-pos.x,nPos.z-pos.z))) {
+            // Hit x face
+            nPos.x = (float)Math.floor(nPos.x) + x;
+            if (x == 0.0f)
+                nPos.x-=0.01f;
+            else
+                nPos.x += 0.01f;
         }
         else {
-            return false;
+            // must have hit z face
+            nPos.z = (float)Math.floor(nPos.z) + z;
+            if (z == 0.0f)
+                nPos.z -=0.01f;
+            else
+                nPos.z += 0.01f;
         }
-
+        return nPos;
     }
-*/
 
     public boolean linesIntersect(Vector2f p, Vector2f r, Vector2f q, Vector2f s) {
 

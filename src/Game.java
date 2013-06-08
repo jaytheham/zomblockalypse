@@ -1,3 +1,4 @@
+import Utils.CrossHair;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -15,11 +16,12 @@ import Utils.Constants;
 public class Game {
 
     private int transformMatrixId;
-    private int vsId = 0;
-    private int fsId = 0;
     private int pId = 0;
     int mouseLastX = 0;
     int mouseLastY = 0;
+
+    double lastFPS;
+    int fps;
 
     private long lastFrameTime = 0;
     private int timeDelta;
@@ -58,22 +60,26 @@ public class Game {
 
         setupShaders();
 
-        Camera cam = new Camera();
-        CameraFPS camF = new CameraFPS();
-
         Player playerOne = new Player();
-        //playerOne.setPosition(camF.getPos());
+
+        SphericalCamera cameraFPS = new SphericalCamera(new Vector3f(0,1,0));
+        SphericalCamera cameraChase = new SphericalChaseCamera(playerOne);
+        SphericalCamera camera = cameraChase;
+
         ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
         Collider collider = new Collider();
 
-        //collider.linesIntersect(new Vector2f(0.0f,0.0f), new Vector2f(0.1f,0.1f),
-        //        new Vector2f(0.5f,0.0f), new Vector2f(0.0f,1.0f));
+        try {
+            Thread.sleep(500); // let loading happen before player starts colliding
+        }
+        catch (Exception e) {
+        }
 
-        System.out.println((int)-0.6f);
-
+        lastFPS = Sys.getTime();
 
         while(!Display.isCloseRequested()) {
             Display.sync(60);
+            updateFPS();
             timeDelta = getDelta();
 
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
@@ -81,25 +87,15 @@ public class Game {
 
             playerOne.move(timeDelta);
 
-            cam.setTarget(playerOne.getPosition());
-            cam.setPositionFromTarget(new Vector3f(0.0f, 14.0f, 10.0f));
-
-            Vector3f line = new Vector3f(2, 4, 0);
-            Vector3f face = new Vector3f(10, 0, 0);
-
-            //camMoveFPS(camF);
-
-            //tie player to camera
-            //playerOne.setPosition(camF.getPos());
-
-
+            camera.moveCamera((Mouse.getX() - mouseLastX)/(float)Display.getWidth(),
+                    (Mouse.getY() - mouseLastY)/(float)Display.getHeight(), timeDelta);
+            mouseLastX = Mouse.getX();
+            mouseLastY = Mouse.getY();
 
             while (Mouse.next()) {
                 if (Mouse.getEventButton() == 1 && Mouse.getEventButtonState()) {
                     try {
-                        Vector3f normTarget = new Vector3f();
-                        Vector3f.sub(cam.getTarget(), cam.getPos(), normTarget);
-                        int[] hitBlock = RayCaster.raycast(cam.getPos(), normTarget, Constants.MAX_PICK_DISTANCE);
+                        int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
                         if (hitBlock != null) {
                             hitBlock[0] += hitBlock[3];
                             hitBlock[1] += hitBlock[4];
@@ -113,11 +109,9 @@ public class Game {
                 }
             }
             while (Keyboard.next()) {
-                if (Keyboard.getEventKey() == Keyboard.KEY_DELETE && Keyboard.getEventKeyState()) {
+                if (Keyboard.getEventKey() == Keyboard.KEY_Y && Keyboard.getEventKeyState()) {
                     try {
-                        Vector3f normTarget = new Vector3f();
-                        Vector3f.sub(cam.getTarget(), cam.getPos(), normTarget);
-                        int[] hitBlock = RayCaster.raycast(cam.getPos(), normTarget, Constants.MAX_PICK_DISTANCE);
+                        int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
                         if (hitBlock != null)
                             chunkBaron.deleteBlock(hitBlock);
                     }
@@ -131,9 +125,26 @@ public class Game {
 
             chunkBaron.update();
 
-            Matrix4f.mul(projectionMatrix, cam.getMatrix(), camXprjMatrix);
+            Matrix4f.mul(projectionMatrix, camera.getMatrix(), camXprjMatrix);
             chunkBaron.render(pId, transformMatrixId, camXprjMatrix);
             playerOne.render(pId, transformMatrixId, camXprjMatrix);
+            camera.renderTargetBlock(pId, transformMatrixId, camXprjMatrix);
+
+            if (Keyboard.isKeyDown(Keyboard.KEY_F1))
+                chunkBaron.saveAllChunks();
+
+            if (Keyboard.isKeyDown(Keyboard.KEY_C)) {
+
+                if (camera instanceof SphericalChaseCamera) {
+                    Vector3f camv = new Vector3f(camera.getPosition());
+                    camv.negate();
+                    cameraFPS.setPosition(camv);
+                    camera = cameraFPS;
+                }
+                else {
+                    camera = cameraChase;
+                }
+            }
 
             Display.update();
         }
@@ -145,8 +156,8 @@ public class Game {
 
 
     private void setupShaders() {
-        vsId = this.loadShader("src/vertex.glsl", GL20.GL_VERTEX_SHADER);
-        fsId = this.loadShader("src/fragment.glsl", GL20.GL_FRAGMENT_SHADER);
+        int vsId = this.loadShader("src/vertex.glsl", GL20.GL_VERTEX_SHADER);
+        int fsId = this.loadShader("src/fragment.glsl", GL20.GL_FRAGMENT_SHADER);
 
         pId = GL20.glCreateProgram();
         GL20.glAttachShader(pId, vsId);
@@ -222,59 +233,6 @@ public class Game {
         return shaderID;
     }
 
-    private void camMoveFPS(CameraFPS cam) {
-        if (Keyboard.isKeyDown(Keyboard.KEY_F))
-            cam.moveLeft(0.5f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_H))
-            cam.moveRight(0.5f);
-
-        if (Keyboard.isKeyDown(Keyboard.KEY_T))
-            cam.moveForwards(0.5f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_G))
-            cam.moveBackwards(0.5f);
-
-        if (Mouse.isButtonDown(0)) {
-            cam.moveTarget((Mouse.getX() - mouseLastX)/(float)Display.getWidth(),
-                    (Mouse.getY() - mouseLastY)/(float)Display.getHeight());
-        }
-        mouseLastX = Mouse.getX();
-        mouseLastY = Mouse.getY();
-    }
-
-    private void camMovement(Camera cam) {
-        if (Keyboard.isKeyDown(Keyboard.KEY_F))
-            cam.offsetPosition(-0.01f, 0.0f, 0.0f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_H))
-            cam.offsetPosition(0.01f, 0.0f, 0.0f);
-
-        if (Keyboard.isKeyDown(Keyboard.KEY_R))
-            cam.offsetPosition(0.0f, 0.01f, 0.0f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_Y))
-            cam.offsetPosition(0.0f, -0.01f, 0.0f);
-
-        if (Keyboard.isKeyDown(Keyboard.KEY_T))
-            cam.offsetPosition(0.0f, 0.0f, -0.01f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_G))
-            cam.offsetPosition(0.0f, 0.0f, 0.01f);
-
-
-        if (Keyboard.isKeyDown(Keyboard.KEY_J))
-            cam.offsetTarget(-0.01f, 0.0f, 0.0f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_L))
-            cam.offsetTarget(0.01f, 0.0f, 0.0f);
-
-        if (Keyboard.isKeyDown(Keyboard.KEY_I))
-            cam.offsetTarget(0.0f, 0.0f, 0.01f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_K))
-            cam.offsetTarget(0.0f, 0.0f, -0.01f);
-
-        if (Keyboard.isKeyDown(Keyboard.KEY_U))
-            cam.offsetTarget(0.0f, 0.01f, 0.0f);
-        else if (Keyboard.isKeyDown(Keyboard.KEY_O))
-            cam.offsetTarget(0.0f, -0.01f, 0.0f);
-
-    }
-
     /**
      * Get the time in milliseconds
      *
@@ -292,6 +250,15 @@ public class Game {
         lastFrameTime = time;
 
         return delta;
+    }
+
+    private void updateFPS() {
+        if (Sys.getTime() - lastFPS > 1000) {
+            Display.setTitle("FPS: " + fps);
+            fps = 0;
+            lastFPS += 1000;
+        }
+        fps++;
     }
 
     /**

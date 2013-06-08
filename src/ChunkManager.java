@@ -1,3 +1,4 @@
+import Utils.Constants;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
@@ -18,8 +19,12 @@ public class ChunkManager {
     private int[] playerChunk;
     private int[] centerChunk;
 
+    private Texture texture;
+
     protected ChunkManager(Player newPlayer) {
         this.player = newPlayer;
+        texture = new Texture(Constants.BLOCK_TEXTURES_FILE_PATH);
+
         loadedChunks = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
         playerChunk = new int[3];
@@ -213,6 +218,10 @@ public class ChunkManager {
         return getBlock((int)Math.floor(p.x), (int)Math.floor(p.y), (int)Math.floor(p.z));
     }
 
+    public int getBlock(float x, float y, float z) {
+        return getBlock((int)Math.floor(x), (int)Math.floor(y), (int)Math.floor(z));
+    }
+
     public void setBlock(Vector3f p, int newBlockVal) {
         if (p == null)
             return;
@@ -300,6 +309,11 @@ public class ChunkManager {
             ChunkSaver saver = new ChunkSaver(c);
             saver.save();
         }
+    }
+
+    public void saveAllChunks() {
+        for (Chunk c : loadedChunks)
+            saveChunk(c);
     }
 
     public void render(int programId, int uniformMatrixId, Matrix4f perspectiveMatrix) {
