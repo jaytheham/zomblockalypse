@@ -1,3 +1,4 @@
+import Shaders.ShaderUtils;
 import Utils.CrossHair;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -6,10 +7,7 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.Sys;
 
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-
-import java.io.*;
 
 import Utils.Constants;
 
@@ -58,13 +56,17 @@ public class Game {
         GL11.glFrontFace(GL11.GL_FRONT);
         //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 
-        setupShaders();
+        setupDefaultShaders("src/Shaders/DefaultVertex.glsl", "src/Shaders/DefaultFragment.glsl");
+        setupPerspectiveMatrix();
 
         Player playerOne = new Player();
 
         SphericalCamera cameraFPS = new SphericalCamera(new Vector3f(0,1,0));
         SphericalCamera cameraChase = new SphericalChaseCamera(playerOne);
         SphericalCamera camera = cameraChase;
+
+        CrossHair aimingRecticle = new CrossHair();
+        aimingRecticle.setupShader("src/Shaders/HudVertex.glsl", "src/Shaders/HudFragment.glsl");
 
         ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
         Collider collider = new Collider();
@@ -126,9 +128,10 @@ public class Game {
             chunkBaron.update();
 
             Matrix4f.mul(projectionMatrix, camera.getMatrix(), camXprjMatrix);
-            chunkBaron.render(pId, transformMatrixId, camXprjMatrix);
+            chunkBaron.render(camXprjMatrix);
             playerOne.render(pId, transformMatrixId, camXprjMatrix);
             camera.renderTargetBlock(pId, transformMatrixId, camXprjMatrix);
+            aimingRecticle.render();
 
             if (Keyboard.isKeyDown(Keyboard.KEY_F1))
                 chunkBaron.saveAllChunks();
@@ -155,16 +158,15 @@ public class Game {
     }
 
 
-    private void setupShaders() {
-        int vsId = this.loadShader("src/vertex.glsl", GL20.GL_VERTEX_SHADER);
-        int fsId = this.loadShader("src/fragment.glsl", GL20.GL_FRAGMENT_SHADER);
+    private void setupDefaultShaders(String vertShader, String fragShader) {
+        int vsId = ShaderUtils.loadShader(vertShader, GL20.GL_VERTEX_SHADER);
+        int fsId = ShaderUtils.loadShader(fragShader, GL20.GL_FRAGMENT_SHADER);
 
         pId = GL20.glCreateProgram();
         GL20.glAttachShader(pId, vsId);
         GL20.glAttachShader(pId, fsId);
 
         GL20.glBindAttribLocation(pId, 0, "in_Position");
-        GL20.glBindAttribLocation(pId, 1, "in_Color");
 
         GL20.glLinkProgram(pId);
 
@@ -176,62 +178,11 @@ public class Game {
 
         transformMatrixId = GL20.glGetUniformLocation(pId, "transformMatrix");
 
-        GL20.glUseProgram(pId);
-
-        projectionMatrix = new Matrix4f();
-
-        float fieldOfView = 60.0f;
-        float aspectRatio = Display.getWidth() / (float)Display.getHeight();
-        float nearPlane = 0.5f;
-        float farPlane = 300.0f;
-        float yScale = this.coTangent(this.degreesToRadians((fieldOfView / 2.0f)));
-
-        projectionMatrix.m00 = yScale / aspectRatio;
-        projectionMatrix.m11 = yScale;
-        projectionMatrix.m22 = -((farPlane + nearPlane) / (farPlane - nearPlane));
-        projectionMatrix.m23 = -1.0f;
-        projectionMatrix.m32 = -((2 * nearPlane * farPlane) / (farPlane - nearPlane));
-        projectionMatrix.m33 = 0.0f;
-
-        GL20.glUseProgram(0);
-
         GL20.glDetachShader(pId, vsId);
         GL20.glDetachShader(pId, fsId);
     }
 
-    /**
-     * Load a shader file and compile it.
-     */
-    private int loadShader(String filename, int type) {
-        StringBuilder shaderSource = new StringBuilder();
-        int shaderID;
 
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(filename));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                shaderSource.append(line).append("\n");
-            }
-            reader.close();
-        } catch (IOException e) {
-            System.err.println("Could not read file.");
-            e.printStackTrace();
-            System.exit(-1);
-        }
-
-        shaderID = GL20.glCreateShader(type);
-        GL20.glShaderSource(shaderID, shaderSource);
-        GL20.glCompileShader(shaderID);
-
-        int status = GL20.glGetShaderi(shaderID, GL20.GL_COMPILE_STATUS);
-
-        if (status == GL11.GL_FALSE) {
-            System.out.println("ERROR: Shader " + filename + " failed to compile!");
-            System.exit(-1);
-        }
-
-        return shaderID;
-    }
 
     /**
      * Get the time in milliseconds
@@ -259,6 +210,23 @@ public class Game {
             lastFPS += 1000;
         }
         fps++;
+    }
+
+    private void setupPerspectiveMatrix() {
+        projectionMatrix = new Matrix4f();
+
+        float fieldOfView = 60.0f;
+        float aspectRatio = Display.getWidth() / (float)Display.getHeight();
+        float nearPlane = 0.5f;
+        float farPlane = 300.0f;
+        float yScale = this.coTangent(this.degreesToRadians((fieldOfView / 2.0f)));
+
+        projectionMatrix.m00 = yScale / aspectRatio;
+        projectionMatrix.m11 = yScale;
+        projectionMatrix.m22 = -((farPlane + nearPlane) / (farPlane - nearPlane));
+        projectionMatrix.m23 = -1.0f;
+        projectionMatrix.m32 = -((2 * nearPlane * farPlane) / (farPlane - nearPlane));
+        projectionMatrix.m33 = 0.0f;
     }
 
     /**

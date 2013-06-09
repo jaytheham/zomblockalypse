@@ -1,9 +1,13 @@
+import Shaders.ShaderUtils;
 import Utils.Constants;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 public class ChunkManager {
@@ -19,11 +23,17 @@ public class ChunkManager {
     private int[] playerChunk;
     private int[] centerChunk;
 
-    private Texture texture;
+    private int programId;
+    private int texUniformId;
+    private int textureId;
+    private int blockId;
+    private int blocksUniformId;
+    private int uniformMatrixId;
 
     protected ChunkManager(Player newPlayer) {
         this.player = newPlayer;
-        texture = new Texture(Constants.BLOCK_TEXTURES_FILE_PATH);
+
+        setupShader("src/Shaders/BlockVertex.glsl", "src/Shaders/BlockFragment.glsl");
 
         loadedChunks = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
@@ -316,13 +326,57 @@ public class ChunkManager {
             saveChunk(c);
     }
 
-    public void render(int programId, int uniformMatrixId, Matrix4f perspectiveMatrix) {
+    public void setupShader(String vertShader, String fragShader) {
+        int vsId = ShaderUtils.loadShader(vertShader, GL20.GL_VERTEX_SHADER);
+        int fsId = ShaderUtils.loadShader(fragShader, GL20.GL_FRAGMENT_SHADER);
+
+        programId = GL20.glCreateProgram();
+        GL20.glAttachShader(programId, vsId);
+        GL20.glAttachShader(programId, fsId);
+
+        GL20.glBindAttribLocation(programId, 0, "in_Position");
+        GL20.glBindAttribLocation(programId, 1, "in_TexCoord");
+        GL20.glBindAttribLocation(programId, 2, "in_BlockType");
+
+        GL20.glLinkProgram(programId);
+
+        int status = GL20.glGetShaderi(programId, GL20.GL_LINK_STATUS);
+        if (status == GL11.GL_FALSE) {
+            System.out.println("ERROR: Shaders failed to link!");
+            System.exit(-1);
+        }
+
+        texUniformId = GL20.glGetUniformLocation(programId, "tex");
+        blocksUniformId = GL20.glGetUniformLocation(programId, "blocks");
+        uniformMatrixId = GL20.glGetUniformLocation(programId, "transformMatrix");
+
+        GL20.glDetachShader(programId, vsId);
+        GL20.glDetachShader(programId, fsId);
+
+        // Block textures
+        textureId = GL11.glGenTextures();
+        GL13.glActiveTexture(0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+
+        Utils.TextureLoader.loadPNG("res/block_textures.png");
+        // Unbind stuff?
+    }
+
+    public void render(Matrix4f perspectiveMatrix) {
 
         FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
         perspectiveMatrix.store(matrixBuffer);
         matrixBuffer.flip();
 
         GL20.glUseProgram(programId);
+
+        GL13.glActiveTexture(0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+        GL20.glUniform1i(texUniformId, 0);
 
         GL20.glUniformMatrix4(uniformMatrixId, false, matrixBuffer);
 

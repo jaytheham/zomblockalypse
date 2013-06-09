@@ -55,7 +55,7 @@ public class SphericalCamera {
     }
 
     public void changePitch(float change) {
-        pitch += change;
+        pitch -= change;
 
         if (pitch > 90.0f)
             pitch = 90.0f;
@@ -76,8 +76,8 @@ public class SphericalCamera {
         fVector.normalise(fVector);
 
         if (Mouse.isButtonDown(0)) {
-            yaw += rotationSpeed * xChange;
-            pitch -= rotationSpeed * yChange;
+            changeYaw(rotationSpeed * xChange);
+            changePitch(rotationSpeed * yChange);
         }
 
         if (Keyboard.isKeyDown(Settings.fpsCameraRight)) {
@@ -141,42 +141,71 @@ public class SphericalCamera {
             blockPos[1] += blockPos[4];
             blockPos[2] += blockPos[5];
 
-            FloatBuffer vertBuf = BufferUtils.createFloatBuffer(24);
+            FloatBuffer vertBuf = BufferUtils.createFloatBuffer(12);
             FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
 
-            vertBuf.put((float)blockPos[0]);
-            vertBuf.put((float)blockPos[1]);
-            vertBuf.put((float)blockPos[2]);
+            float shift = 0.95f;
 
-            vertBuf.put((float)blockPos[0] + 1.0f);
-            vertBuf.put((float)blockPos[1]);
-            vertBuf.put((float)blockPos[2]);
+            if (blockPos[3] != 0) { // xFace intersection
+                if (blockPos[3] > 0)
+                    shift = 0.05f;
 
-            vertBuf.put((float)blockPos[0]);
-            vertBuf.put((float)blockPos[1]);
-            vertBuf.put((float)blockPos[2] + 1.0f);
+                vertBuf.put(blockPos[0] + shift);
+                vertBuf.put((float)blockPos[1]);
+                vertBuf.put((float)blockPos[2]);
 
-            vertBuf.put((float)blockPos[0] + 1.0f);
-            vertBuf.put((float)blockPos[1]);
-            vertBuf.put((float)blockPos[2] + 1.0f);
+                vertBuf.put(blockPos[0] + shift);
+                vertBuf.put((float)blockPos[1]);
+                vertBuf.put(blockPos[2] + 1.0f);
 
+                vertBuf.put(blockPos[0] + shift);
+                vertBuf.put(blockPos[1] + 1.0f);
+                vertBuf.put(blockPos[2] + 1.0f);
 
-            vertBuf.put((float)blockPos[0]);
-            vertBuf.put((float)blockPos[1] + 1.0f);
-            vertBuf.put((float)blockPos[2]);
+                vertBuf.put(blockPos[0] + shift);
+                vertBuf.put((float)blockPos[1] + 1.0f);
+                vertBuf.put((float)blockPos[2]);
+            }
+            else if (blockPos[4] != 0) { // yFace intersection
+                if (blockPos[4] > 0)
+                    shift = 0.05f;
 
-            vertBuf.put((float)blockPos[0] + 1.0f);
-            vertBuf.put((float)blockPos[1] + 1.0f);
-            vertBuf.put((float)blockPos[2]);
+                vertBuf.put((float)blockPos[0]);
+                vertBuf.put(blockPos[1] + shift);
+                vertBuf.put((float)blockPos[2]);
 
-            vertBuf.put((float)blockPos[0]);
-            vertBuf.put((float)blockPos[1] + 1.0f);
-            vertBuf.put((float)blockPos[2] + 1.0f);
+                vertBuf.put(blockPos[0] + 1.0f);
+                vertBuf.put(blockPos[1] + shift);
+                vertBuf.put((float)blockPos[2]);
 
-            vertBuf.put((float)blockPos[0] + 1.0f);
-            vertBuf.put((float)blockPos[1] + 1.0f);
-            vertBuf.put((float)blockPos[2] + 1.0f);
+                vertBuf.put(blockPos[0] + 1.0f);
+                vertBuf.put(blockPos[1] + shift);
+                vertBuf.put(blockPos[2] + 1.0f);
 
+                vertBuf.put((float)blockPos[0]);
+                vertBuf.put(blockPos[1] + shift);
+                vertBuf.put(blockPos[2] + 1.0f);
+            }
+            else {  // zFace intersection
+                if (blockPos[5] > 0)
+                    shift = 0.05f;
+
+                vertBuf.put((float)blockPos[0]);
+                vertBuf.put((float)blockPos[1]);
+                vertBuf.put(blockPos[2] + shift);
+
+                vertBuf.put(blockPos[0] + 1.0f);
+                vertBuf.put((float)blockPos[1]);
+                vertBuf.put(blockPos[2] + shift);
+
+                vertBuf.put(blockPos[0] + 1.0f);
+                vertBuf.put(blockPos[1] + 1.0f);
+                vertBuf.put(blockPos[2] + shift);
+
+                vertBuf.put((float)blockPos[0]);
+                vertBuf.put(blockPos[1] + 1.0f);
+                vertBuf.put(blockPos[2] + shift);
+            }
 
             vertBuf.flip();
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
@@ -194,7 +223,7 @@ public class SphericalCamera {
             GL20.glEnableVertexAttribArray(0);
             GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
 
-            GL11.glDrawArrays(GL11.GL_LINE_LOOP, 0, 8);
+            GL11.glDrawArrays(GL11.GL_LINE_LOOP, 0, 4);
 
             GL20.glDisableVertexAttribArray(0);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);

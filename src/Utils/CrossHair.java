@@ -1,7 +1,9 @@
 package Utils;
 
+import Shaders.ShaderUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
@@ -19,7 +21,7 @@ import java.nio.FloatBuffer;
 public class CrossHair {
 
     private int vbo;
-    private FloatBuffer matBuf;
+    private int programId;
 
     public CrossHair() {
         vbo = GL15.glGenBuffers();
@@ -27,24 +29,22 @@ public class CrossHair {
 
         FloatBuffer vertBuf = BufferUtils.createFloatBuffer(12);
 
-        int i = 0;
-
         vertBuf.put(-0.01f);
         vertBuf.put(0.0f);
-        vertBuf.put(0.6f);
+        vertBuf.put(0.0f);
 
         vertBuf.put(0.01f);
         vertBuf.put(0.0f);
-        vertBuf.put(0.6f);
+        vertBuf.put(0.0f);
 
 
         vertBuf.put(0.0f);
-        vertBuf.put(0.01f);
-        vertBuf.put(0.6f);
+        vertBuf.put(0.015f);
+        vertBuf.put(0.0f);
 
         vertBuf.put(0.0f);
-        vertBuf.put(-0.01f);
-        vertBuf.put(0.6f);
+        vertBuf.put(-0.015f);
+        vertBuf.put(0.0f);
 
         vertBuf.flip();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
@@ -52,23 +52,38 @@ public class CrossHair {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
     }
 
-    public void render(int programId, int uniformMatrixId) {
+    public void setupShader(String vertShader, String fragShader) {
+        int vsId = ShaderUtils.loadShader(vertShader, GL20.GL_VERTEX_SHADER);
+        int fsId = ShaderUtils.loadShader(fragShader, GL20.GL_FRAGMENT_SHADER);
 
-        FloatBuffer matBuf = BufferUtils.createFloatBuffer(16);
-        Matrix4f matrix = new Matrix4f();
-        matrix.setIdentity();
-        matBuf.position(0);
-        matrix.store(matBuf);
-        matBuf.flip();
+        programId = GL20.glCreateProgram();
+        GL20.glAttachShader(programId, vsId);
+        GL20.glAttachShader(programId, fsId);
+
+        GL20.glBindAttribLocation(programId, 0, "in_Position");
+
+        GL20.glLinkProgram(programId);
+
+        int status = GL20.glGetShaderi(programId, GL20.GL_LINK_STATUS);
+        if (status == GL11.GL_FALSE) {
+            System.out.println("ERROR: Shaders failed to link!");
+            System.exit(-1);
+        }
+
+        GL20.glDetachShader(programId, vsId);
+        GL20.glDetachShader(programId, fsId);
+
+    }
+
+    public void render() {
+
         GL20.glUseProgram(programId);
-
-        GL20.glUniformMatrix4(uniformMatrixId, false, matBuf);
 
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
         GL20.glEnableVertexAttribArray(0);
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
 
-        GL11.glDrawArrays(GL11.GL_LINE, 0, 4);
+        GL11.glDrawArrays(GL11.GL_LINES, 0, 4);
 
         GL20.glDisableVertexAttribArray(0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
