@@ -120,6 +120,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-2.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y);
@@ -128,6 +129,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-2.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
@@ -136,6 +138,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-2.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y);
@@ -144,6 +147,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-2.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y);
@@ -152,6 +156,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-2.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
@@ -160,8 +165,9 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-2.0f);
 
-                        numFloatsAdded += 36;
+                        numFloatsAdded += 42;
                     }
 
                     //Top Tris
@@ -174,6 +180,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(2.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
@@ -182,6 +189,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(2.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y + 1);
@@ -190,6 +198,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(2.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y + 1);
@@ -198,6 +207,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(2.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
@@ -206,6 +216,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(2.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
@@ -214,8 +225,9 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(2.0f);
 
-                        numFloatsAdded += 36;
+                        numFloatsAdded += 42;
                     }
 
                     //Left Tris
@@ -228,6 +240,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-1.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
@@ -236,6 +249,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-1.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y + 1);
@@ -244,6 +258,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-1.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
@@ -252,6 +267,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-1.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y + 1);
@@ -260,6 +276,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-1.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y + 1);
@@ -268,8 +285,9 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-1.0f);
 
-                        numFloatsAdded += 36;
+                        numFloatsAdded += 42;
                     }
 
                     //Right Tris
@@ -282,6 +300,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(1.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y);
@@ -290,6 +309,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(1.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y);
@@ -298,6 +318,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(1.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
@@ -306,6 +327,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(1.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
@@ -314,6 +336,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(1.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y);
@@ -322,8 +345,9 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(1.0f);
 
-                        numFloatsAdded += 36;
+                        numFloatsAdded += 42;
                     }
 
                     //Back Tris
@@ -336,6 +360,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-3.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y);
@@ -344,6 +369,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-3.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
@@ -352,6 +378,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-3.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
@@ -360,6 +387,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-3.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y + 1);
@@ -368,6 +396,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-3.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
@@ -376,8 +405,9 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(-3.0f);
 
-                        numFloatsAdded += 36;
+                        numFloatsAdded += 42;
                     }
 
                     //Front Tris
@@ -390,6 +420,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(3.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y);
@@ -398,6 +429,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(3.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
@@ -406,6 +438,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(3.0f);
 
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
@@ -414,6 +447,7 @@ public class Chunk {
                         vertBuf.put(uvMax);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(3.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y + 1);
@@ -422,6 +456,7 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMin);
                         vertBuf.put(blockVal);
+                        vertBuf.put(3.0f);
 
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
@@ -430,8 +465,9 @@ public class Chunk {
                         vertBuf.put(uvMin);
                         vertBuf.put(uvMax);
                         vertBuf.put(blockVal);
+                        vertBuf.put(3.0f);
 
-                        numFloatsAdded += 36;
+                        numFloatsAdded += 42;
                     }
 
 
@@ -455,16 +491,19 @@ public class Chunk {
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
         GL20.glEnableVertexAttribArray(2);
+        GL20.glEnableVertexAttribArray(3);
 
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 24, 0);
-        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 24, 12);
-        GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, 24, 20);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 28, 0);
+        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 28, 12);
+        GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, 28, 20);
+        GL20.glVertexAttribPointer(3, 1, GL11.GL_FLOAT, false, 28, 24);
 
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, this.elements/6);
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, this.elements/7);
 
         GL20.glDisableVertexAttribArray(0);
         GL20.glDisableVertexAttribArray(1);
         GL20.glDisableVertexAttribArray(2);
+        GL20.glDisableVertexAttribArray(3);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 
 

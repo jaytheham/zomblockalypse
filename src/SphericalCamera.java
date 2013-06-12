@@ -14,8 +14,8 @@ import java.nio.FloatBuffer;
 
 public class SphericalCamera {
 
-    protected float pitch;
-    protected float yaw;
+    protected double pitch;
+    protected double yaw;
     protected Vector3f position;
     private Matrix4f matrix;
 
@@ -25,16 +25,16 @@ public class SphericalCamera {
     protected float rotationSpeed = 90.0f;
 
     public SphericalCamera() {
-        pitch = 0.0f;
-        yaw = 0.0f;
+        pitch = 0.0;
+        yaw = 0.0;
         position = new Vector3f(0,0,0);
         matrix = new Matrix4f();
         vbo = GL15.glGenBuffers();
     }
 
     public SphericalCamera(Vector3f p) {
-        pitch = 0.0f;
-        yaw = 0.0f;
+        pitch = 0.0;
+        yaw = 0.0;
         position = p;
         matrix = new Matrix4f();
         vbo = GL15.glGenBuffers();
@@ -47,20 +47,20 @@ public class SphericalCamera {
     public void changeYaw(float change) {
         yaw += change;
 
-        if (yaw > 360.0f)
-            yaw %= 360.0f;
-        else if (yaw < 0.0f) {
-            yaw += 360.0f;
+        if (yaw > 360.0)
+            yaw %= 360.0;
+        else if (yaw < 0.0) {
+            yaw += 360.0;
         }
     }
 
     public void changePitch(float change) {
         pitch -= change;
 
-        if (pitch > 90.0f)
-            pitch = 90.0f;
-        else if (pitch < -90.0f) {
-            pitch = -90.0f;
+        if (pitch > 90.0)
+            pitch = 90.0;
+        else if (pitch < -90.0) {
+            pitch = -90.0;
         }
     }
 
@@ -126,8 +126,8 @@ public class SphericalCamera {
 
     private void calculateMatrix() {
         matrix.setIdentity();
-        matrix.rotate((float)Math.toRadians((double)pitch), new Vector3f(1,0,0));
-        matrix.rotate((float)Math.toRadians((double)yaw), new Vector3f(0,1,0));
+        matrix.rotate((float)Math.toRadians(pitch), new Vector3f(1,0,0));
+        matrix.rotate((float)Math.toRadians(yaw), new Vector3f(0,1,0));
         matrix.translate(position);
     }
 

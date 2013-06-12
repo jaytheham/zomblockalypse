@@ -76,7 +76,6 @@ public class Game {
         }
         catch (Exception e) {
         }
-        chunkBaron.testLight();
 
         lastFPS = Sys.getTime();
 
@@ -88,12 +87,14 @@ public class Game {
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
             GL11.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
 
-            playerOne.move(timeDelta);
+
 
             camera.moveCamera((Mouse.getX() - mouseLastX)/(float)Display.getWidth(),
                     (Mouse.getY() - mouseLastY)/(float)Display.getHeight(), timeDelta);
             mouseLastX = Mouse.getX();
             mouseLastY = Mouse.getY();
+
+            playerOne.move(timeDelta);
 
             while (Mouse.next()) {
                 if (Mouse.getEventButton() == 1 && Mouse.getEventButtonState()) {

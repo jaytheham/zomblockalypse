@@ -27,4 +27,5 @@ public class Settings {
     public static int fpsCameraBackwards = Keyboard.KEY_G;
 
     public static float mouseScrollSensitivity = 0.003f;
+    public static float cameraRotateSensitivity = 400.0f;
 }

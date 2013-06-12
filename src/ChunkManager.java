@@ -22,17 +22,14 @@ public class ChunkManager {
     private int programId;
     private int uniformTextureId;
     private int textureId;
-    private int blocksBufferId;
-    private int blocksTextureId;
-    private int uniformBlocksId;
+
     private int uniformMatrixId;
 
     private int uniformLightPositionsId;
     private int uniformLightColorsId;
-    private int uniformWorldPosOffset;
     private FloatBuffer lightPositions;
     private FloatBuffer lightColors;
-    private ByteBuffer lightingBlocks;
+
 
 
     protected ChunkManager(Player newPlayer) {
@@ -54,64 +51,67 @@ public class ChunkManager {
 
         // This shouldn't be here eventually
         lightPositions = BufferUtils.createFloatBuffer(16 * 3);
-        lightPositions.put(2.0f);
+        lightPositions.put(3.5f);
         lightPositions.put(7.5f);
         lightPositions.put(1.5f);
-        lightPositions.put(5.0f);
         lightPositions.put(5.5f);
+        lightPositions.put(7.5f);
         lightPositions.put(1.5f);
-        lightPositions.put(5.0f);
-        lightPositions.put(5.6f);
+        lightPositions.put(7.5f);
+        lightPositions.put(7.5f);
         lightPositions.put(1.5f);
-        lightPositions.put(5.0f);
-        lightPositions.put(5.4f);
+        lightPositions.put(9.5f);
+        lightPositions.put(7.5f);
         lightPositions.put(1.5f);
-        lightPositions.put(5.1f);
-        lightPositions.put(5.5f);
+        lightPositions.put(12.5f);
+        lightPositions.put(7.5f);
+        lightPositions.put(31.5f);
+        lightPositions.put(14.5f);
+        lightPositions.put(7.5f);
         lightPositions.put(1.5f);
-        lightPositions.put(4.9f);
-        lightPositions.put(5.5f);
+        lightPositions.put(16.5f);
+        lightPositions.put(7.5f);
+        lightPositions.put(1.5f);
+        lightPositions.put(18.5f);
+        lightPositions.put(7.5f);
         lightPositions.put(1.5f);
         lightPositions.flip();
         lightColors = BufferUtils.createFloatBuffer(16 * 4);
         lightColors.put(1.0f);
-        lightColors.put(0.99f);
-        lightColors.put(0.95f);
-        lightColors.put(20.0f);
+        lightColors.put(0.0f);
+        lightColors.put(0.0f);
+        lightColors.put(15.0f);
+        lightColors.put(0.0f);
         lightColors.put(1.0f);
-        lightColors.put(0.80f);
-        lightColors.put(0.4f);
-        lightColors.put(35.0f);
+        lightColors.put(0.0f);
+        lightColors.put(150.0f);
+        lightColors.put(0.0f);
+        lightColors.put(0.0f);
         lightColors.put(1.0f);
-        lightColors.put(0.90f);
-        lightColors.put(0.3f);
-        lightColors.put(35.0f);
+        lightColors.put(15.0f);
         lightColors.put(1.0f);
-        lightColors.put(0.90f);
-        lightColors.put(0.7f);
-        lightColors.put(35.0f);
+        lightColors.put(0.0f);
         lightColors.put(1.0f);
-        lightColors.put(0.60f);
-        lightColors.put(0.4f);
-        lightColors.put(35.0f);
+        lightColors.put(15.0f);
+        lightColors.put(1.0f);
+        lightColors.put(1.0f);
+        lightColors.put(0.0f);
+        lightColors.put(45.0f);
+        lightColors.put(0.0f);
+        lightColors.put(1.0f);
+        lightColors.put(1.0f);
+        lightColors.put(15.0f);
+        lightColors.put(1.0f);
+        lightColors.put(1.0f);
+        lightColors.put(1.0f);
+        lightColors.put(15.0f);
+        lightColors.put(0.5f);
+        lightColors.put(0.5f);
+        lightColors.put(0.5f);
+        lightColors.put(15.0f);
+
         lightColors.flip();
 
-        blocksBufferId = GL15.glGenBuffers();
-        blocksTextureId = GL11.glGenTextures();
-
-    }
-
-    public void testLight() {
-        lightingBlocks = BufferUtils.createByteBuffer(32 * 32 * 16);
-        for (int i = 0; i < 32 * 32 * 16; i ++) {
-            lightingBlocks.put((byte)getChunkAtWorldCoords(0,0,0).getBlock(i));
-        }
-        lightingBlocks.flip();
-
-        GL15.glBindBuffer(GL31.GL_TEXTURE_BUFFER, blocksBufferId);
-        GL15.glBufferData(GL31.GL_TEXTURE_BUFFER, lightingBlocks, GL15.GL_DYNAMIC_DRAW);
-        GL11.glBindTexture(GL31.GL_TEXTURE_BUFFER, blocksTextureId);
-        GL31.glTexBuffer(GL31.GL_TEXTURE_BUFFER, GL30.GL_R8I, blocksBufferId);
     }
 
     public static ChunkManager getInstance(Player player) {
@@ -220,19 +220,6 @@ public class ChunkManager {
             }
 
             activeChunks = activeChunksTempBuffer;
-
-            int x,y,z;
-            x = (int)activeChunksCenter.x * Chunk.CHUNK_WIDTH;
-            y = (int)activeChunksCenter.y * Chunk.CHUNK_HEIGHT;
-            z = (int)activeChunksCenter.z * Chunk.CHUNK_WIDTH;
-
-            for (int i = 0; i < 32 * 32 * 16; i ++) {
-                lightingBlocks.put((byte)getChunkAtWorldCoords(x,y,z).getBlock(i));
-            }
-
-            lightingBlocks.flip();
-            GL15.glBindBuffer(GL31.GL_TEXTURE_BUFFER, blocksBufferId);
-            GL15.glBufferData(GL31.GL_TEXTURE_BUFFER, lightingBlocks, GL15.GL_DYNAMIC_DRAW);
 
         }
 
@@ -422,6 +409,7 @@ public class ChunkManager {
         GL20.glBindAttribLocation(programId, 0, "in_Position");
         GL20.glBindAttribLocation(programId, 1, "in_TexCoord");
         GL20.glBindAttribLocation(programId, 2, "in_BlockType");
+        GL20.glBindAttribLocation(programId, 3, "in_VertNormal");
 
         GL20.glLinkProgram(programId);
 
@@ -432,11 +420,9 @@ public class ChunkManager {
         }
 
         uniformTextureId = GL20.glGetUniformLocation(programId, "uTexture");
-        uniformBlocksId = GL20.glGetUniformLocation(programId, "uBlocks");
         uniformMatrixId = GL20.glGetUniformLocation(programId, "transformMatrix");
         uniformLightPositionsId = GL20.glGetUniformLocation(programId, "uLightPositions");
         uniformLightColorsId = GL20.glGetUniformLocation(programId, "uLightColors");
-        uniformWorldPosOffset = GL20.glGetUniformLocation(programId, "uWorldPosOffset");
 
         GL20.glDetachShader(programId, vsId);
         GL20.glDetachShader(programId, fsId);
@@ -466,25 +452,9 @@ public class ChunkManager {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
         GL20.glUniform1i(uniformTextureId, 0);
 
-        GL13.glActiveTexture(GL13.GL_TEXTURE1);
-        GL11.glBindTexture(GL31.GL_TEXTURE_BUFFER, blocksTextureId);
-
         GL20.glUniformMatrix4(uniformMatrixId, false, matrixBuffer);
         GL20.glUniform3(uniformLightPositionsId, lightPositions);
         GL20.glUniform4(uniformLightColorsId, lightColors);
-        GL20.glUniform1i(uniformBlocksId, 1);
-
-        float x, y, z;
-       // x = (activeChunksCenter.x - (CHUNKS_WIDE/2)) * Chunk.CHUNK_WIDTH;
-        //y = (activeChunksCenter.y - (CHUNKS_HIGH/2)) * Chunk.CHUNK_HEIGHT;
-        //z = (activeChunksCenter.z - (CHUNKS_WIDE/2)) * Chunk.CHUNK_WIDTH;
-
-        //GL20.glUniform3f(uniformWorldPosOffset, x, y, z);
-        // for single chunk
-        GL20.glUniform3f(uniformWorldPosOffset,
-                activeChunksCenter.x * 32,
-                activeChunksCenter.y * 16,
-                activeChunksCenter.z * 32);
 
         for (Chunk c : activeChunks) {
             if (c != null && c.isLoaded())

@@ -12,6 +12,8 @@ public class Player implements Collidable{
 
     private Vector3f position;
     private Vector3f nextPosition;
+    private Vector3f forwardsVector;
+    private Vector3f rightVector;
     private float rotation; //0 degrees = -z axis
     private float velocity;
 
@@ -32,6 +34,8 @@ public class Player implements Collidable{
     public Player() {
         position = new Vector3f(2.0f, 1.0f, 2.0f);
         nextPosition = new Vector3f(2.0f, 1.0f, 2.0f);
+        forwardsVector = new Vector3f(0,0,0);
+        rightVector = new Vector3f(0,0,0);
         rotation = 0.0f;
         velocity = 0.0f;
         moveDirection = new Vector3f(0.0f, 0.0f, 0.0f);
@@ -92,54 +96,32 @@ public class Player implements Collidable{
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
     }
 
+    public void setMoveDirection(Vector3f forwards, Vector3f right) {
+        forwardsVector = forwards;
+        rightVector = right;
+    }
+
     public void move(int timeDelta) {
         float destinationAngle = -1.0f;
 
+        moveDirection.set(0.0f, 0.01f, 0.0f);
+
         if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-            if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-                destinationAngle = 45.0f;
-            }
-            else if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-                destinationAngle = 315.0f;
-            }
-            else {
-                destinationAngle = 0.0f;
-            }
+            moveDirection = forwardsVector;
         }
         else if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-            if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-                destinationAngle = 225.0f;
-            }
-            else if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-                destinationAngle = 135.0f;
-            }
-            else {
-                destinationAngle = 180.0f;
-            }
+            forwardsVector.negate(moveDirection);
         }
-        else if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-            destinationAngle = 90.0f;
+
+        if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+            Vector3f.add(rightVector, moveDirection, moveDirection);
         }
         else if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-            destinationAngle = 270.0f;
+            rightVector.negate();
+            Vector3f.add(rightVector, moveDirection, moveDirection);
         }
 
-        if (destinationAngle >= 0.0f) {
-            float turnDirection = 22.5f;
-            float angle = destinationAngle - rotation;
-            if (angle < 0.0f)
-                turnDirection = -22.5f;
-            if (angle > 180.0f || angle < -180.0f)
-                turnDirection *= -1;
-
-            if (rotation != destinationAngle) {
-                rotation += turnDirection;
-                if (rotation < 0.0f)
-                    rotation += 360.0f;
-                else if (rotation > 360.0f)
-                    rotation -= 360.0f;
-            }
-        }
+        moveDirection.normalise();
 
         if (Keyboard.isKeyDown(Keyboard.KEY_A) || Keyboard.isKeyDown(Keyboard.KEY_D) ||
                 Keyboard.isKeyDown(Keyboard.KEY_W) || Keyboard.isKeyDown(Keyboard.KEY_S)) {
@@ -154,12 +136,6 @@ public class Player implements Collidable{
         else {
             velocity = 0.0f;
         }
-
-        double radians = Math.toRadians(rotation);
-
-        moveDirection.x = (float)Math.sin(radians);
-        moveDirection.z = (float)Math.cos(radians);
-        moveDirection.z *= -1;
 
         moveDirection.scale(velocity * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f)));
 
