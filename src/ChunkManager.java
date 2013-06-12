@@ -1,9 +1,6 @@
 import Shaders.ShaderUtils;
-import Utils.Constants;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -17,35 +14,104 @@ public class ChunkManager {
     private final int CHUNKS_WIDE = 7;
     private final int CHUNKS_HIGH = 5;
 
-    private Chunk[] loadedChunks;
-    private Chunk[] loadedChunksBackBuffer;
+    private Chunk[] activeChunks;
     private Player player;
-    private int[] playerChunk;
-    private int[] centerChunk;
+    private Vector3f activeChunksPlayerPos;
+    private Vector3f activeChunksCenter;
 
     private int programId;
-    private int texUniformId;
+    private int uniformTextureId;
     private int textureId;
-    private int blockId;
-    private int blocksUniformId;
+    private int blocksBufferId;
+    private int blocksTextureId;
+    private int uniformBlocksId;
     private int uniformMatrixId;
 
+    private int uniformLightPositionsId;
+    private int uniformLightColorsId;
+    private int uniformWorldPosOffset;
+    private FloatBuffer lightPositions;
+    private FloatBuffer lightColors;
+    private ByteBuffer lightingBlocks;
+
+
     protected ChunkManager(Player newPlayer) {
-        this.player = newPlayer;
+        player = newPlayer;
 
         setupShader("src/Shaders/BlockVertex.glsl", "src/Shaders/BlockFragment.glsl");
 
-        loadedChunks = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
+        activeChunks = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
-        playerChunk = new int[3];
+        activeChunksPlayerPos = new Vector3f();
 
-        playerChunk[0] = (int)Math.floor(this.player.getX() / Chunk.CHUNK_WIDTH);
-        playerChunk[1] = (int)Math.floor(this.player.getY() / Chunk.CHUNK_HEIGHT);
-        playerChunk[2] = (int)Math.floor(this.player.getZ() / Chunk.CHUNK_WIDTH);
+        activeChunksPlayerPos.x = (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH);
+        activeChunksPlayerPos.y = (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT);
+        activeChunksPlayerPos.z = (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH);
 
-        centerChunk = (playerChunk).clone();
+        activeChunksCenter = new Vector3f(activeChunksPlayerPos);
 
         updateNullChunks(CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH);
+
+        // This shouldn't be here eventually
+        lightPositions = BufferUtils.createFloatBuffer(16 * 3);
+        lightPositions.put(2.0f);
+        lightPositions.put(7.5f);
+        lightPositions.put(1.5f);
+        lightPositions.put(5.0f);
+        lightPositions.put(5.5f);
+        lightPositions.put(1.5f);
+        lightPositions.put(5.0f);
+        lightPositions.put(5.6f);
+        lightPositions.put(1.5f);
+        lightPositions.put(5.0f);
+        lightPositions.put(5.4f);
+        lightPositions.put(1.5f);
+        lightPositions.put(5.1f);
+        lightPositions.put(5.5f);
+        lightPositions.put(1.5f);
+        lightPositions.put(4.9f);
+        lightPositions.put(5.5f);
+        lightPositions.put(1.5f);
+        lightPositions.flip();
+        lightColors = BufferUtils.createFloatBuffer(16 * 4);
+        lightColors.put(1.0f);
+        lightColors.put(0.99f);
+        lightColors.put(0.95f);
+        lightColors.put(20.0f);
+        lightColors.put(1.0f);
+        lightColors.put(0.80f);
+        lightColors.put(0.4f);
+        lightColors.put(35.0f);
+        lightColors.put(1.0f);
+        lightColors.put(0.90f);
+        lightColors.put(0.3f);
+        lightColors.put(35.0f);
+        lightColors.put(1.0f);
+        lightColors.put(0.90f);
+        lightColors.put(0.7f);
+        lightColors.put(35.0f);
+        lightColors.put(1.0f);
+        lightColors.put(0.60f);
+        lightColors.put(0.4f);
+        lightColors.put(35.0f);
+        lightColors.flip();
+
+        blocksBufferId = GL15.glGenBuffers();
+        blocksTextureId = GL11.glGenTextures();
+
+    }
+
+    public void testLight() {
+        lightingBlocks = BufferUtils.createByteBuffer(32 * 32 * 16);
+        for (int i = 0; i < 32 * 32 * 16; i ++) {
+            lightingBlocks.put((byte)getChunkAtWorldCoords(0,0,0).getBlock(i));
+        }
+        lightingBlocks.flip();
+
+        GL15.glBindBuffer(GL31.GL_TEXTURE_BUFFER, blocksBufferId);
+        GL15.glBufferData(GL31.GL_TEXTURE_BUFFER, lightingBlocks, GL15.GL_DYNAMIC_DRAW);
+        GL11.glBindTexture(GL31.GL_TEXTURE_BUFFER, blocksTextureId);
+        GL31.glTexBuffer(GL31.GL_TEXTURE_BUFFER, GL30.GL_R8I, blocksBufferId);
     }
 
     public static ChunkManager getInstance(Player player) {
@@ -56,60 +122,60 @@ public class ChunkManager {
     }
 
     public void update() {
+
         int[] playerNewChunk = new int[3];
         int xChange, yChange, zChange;
-
 
         playerNewChunk[0] = (int)Math.floor(this.player.getX() / Chunk.CHUNK_WIDTH);
         playerNewChunk[1] = (int)Math.floor(this.player.getY() / Chunk.CHUNK_HEIGHT);
         playerNewChunk[2] = (int)Math.floor(this.player.getZ() / Chunk.CHUNK_WIDTH);
 
-        xChange = playerNewChunk[0] - this.centerChunk[0];
-        yChange = playerNewChunk[1] - this.centerChunk[1];
-        zChange = playerNewChunk[2] - this.centerChunk[2];
+        xChange = playerNewChunk[0] - (int)activeChunksCenter.x;
+        yChange = playerNewChunk[1] - (int)activeChunksCenter.y;
+        zChange = playerNewChunk[2] - (int)activeChunksCenter.z;
 
-        this.playerChunk[0] = playerNewChunk[0];
-        this.playerChunk[1] = playerNewChunk[1];
-        this.playerChunk[2] = playerNewChunk[2];
+        activeChunksPlayerPos.x = playerNewChunk[0];
+        activeChunksPlayerPos.y = playerNewChunk[1];
+        activeChunksPlayerPos.z = playerNewChunk[2];
 
         if (xChange < -1 || xChange > 1
                 || zChange < -1 || zChange > 1
                 || yChange < -1 || yChange > 1) {
 
             //This is used as a buffer so no need to null any chunks
-            loadedChunksBackBuffer = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
+            Chunk[] activeChunksTempBuffer = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
-            this.centerChunk[0] = playerNewChunk[0];
-            this.centerChunk[1] = playerNewChunk[1];
-            this.centerChunk[2] = playerNewChunk[2];
+            activeChunksCenter.x = playerNewChunk[0];
+            activeChunksCenter.y = playerNewChunk[1];
+            activeChunksCenter.z = playerNewChunk[2];
 
             int xStart = CHUNKS_WIDE - 1;
-            int xEnd = -1 + (-1 * xChange);
+            int xEnd = -1 + -xChange;
             int xInc = -1;
 
             if (xChange > 0) {
                 xStart = 0;
-                xEnd = CHUNKS_WIDE + (-1 * xChange);
+                xEnd = CHUNKS_WIDE + -xChange;
                 xInc = 1;
             }
 
             int zStart = CHUNKS_WIDE - 1;
-            int zEnd = -1 + (-1 * zChange);
+            int zEnd = -1 + -zChange;
             int zInc = -1;
 
             if (zChange > 0) {
                 zStart = 0;
-                zEnd = CHUNKS_WIDE + (-1 * zChange);
+                zEnd = CHUNKS_WIDE + -zChange;
                 zInc = 1;
             }
 
             int yStart = CHUNKS_HIGH - 1;
-            int yEnd = -1 + (-1 * yChange);
+            int yEnd = -1 + -yChange;
             int yInc = -1;
 
             if (yChange > 0) {
                 yStart = 0;
-                yEnd = CHUNKS_HIGH + (-1 * yChange);
+                yEnd = CHUNKS_HIGH + -yChange;
                 yInc = 1;
             }
 
@@ -121,30 +187,31 @@ public class ChunkManager {
 
                         //save this if it will be lost
                         if ((xChange > 0) && (x < xStart + xChange)) {
-                            saveChunk(getChunkLoadedCoords(x, y, z));
+                            saveChunk(getActiveChunk(x, y, z));
                         }
                         else if ((xChange < 0) && (x > xStart + xChange)) {
-                            saveChunk(getChunkLoadedCoords(x, y, z));
+                            saveChunk(getActiveChunk(x, y, z));
                         }
                         else if ((zChange > 0) && (z < zStart + zChange)) {
-                            saveChunk(getChunkLoadedCoords(x, y, z));
+                            saveChunk(getActiveChunk(x, y, z));
                         }
                         else if ((zChange < 0) && (z > zStart + zChange)) {
-                            saveChunk(getChunkLoadedCoords(x, y, z));
+                            saveChunk(getActiveChunk(x, y, z));
                         }
                         else if ((yChange > 0) && (y < yStart + yChange)) {
-                            saveChunk(getChunkLoadedCoords(x, y, z));
+                            saveChunk(getActiveChunk(x, y, z));
                         }
                         else if ((yChange < 0) && (y > yStart + yChange)) {
-                            saveChunk(getChunkLoadedCoords(x, y, z));
+                            saveChunk(getActiveChunk(x, y, z));
                         }
 
                         //set this to (this + change)
-                        loadedChunksBackBuffer[x +
+                        activeChunksTempBuffer[
+                                 x +
                                 (y * CHUNKS_WIDE * CHUNKS_WIDE) +
                                 (z * CHUNKS_WIDE)]
-                                =
-                                loadedChunks[x + xChange +
+                                = activeChunks[
+                                          x + xChange +
                                         ((y + yChange) * CHUNKS_WIDE * CHUNKS_WIDE) +
                                         ((z + zChange) * CHUNKS_WIDE)];
 
@@ -152,22 +219,35 @@ public class ChunkManager {
                 }
             }
 
-            loadedChunks = loadedChunksBackBuffer;
-            loadedChunksBackBuffer = null;
+            activeChunks = activeChunksTempBuffer;
+
+            int x,y,z;
+            x = (int)activeChunksCenter.x * Chunk.CHUNK_WIDTH;
+            y = (int)activeChunksCenter.y * Chunk.CHUNK_HEIGHT;
+            z = (int)activeChunksCenter.z * Chunk.CHUNK_WIDTH;
+
+            for (int i = 0; i < 32 * 32 * 16; i ++) {
+                lightingBlocks.put((byte)getChunkAtWorldCoords(x,y,z).getBlock(i));
+            }
+
+            lightingBlocks.flip();
+            GL15.glBindBuffer(GL31.GL_TEXTURE_BUFFER, blocksBufferId);
+            GL15.glBufferData(GL31.GL_TEXTURE_BUFFER, lightingBlocks, GL15.GL_DYNAMIC_DRAW);
+
         }
 
         updateNullChunks(1);
     }
 
     /**
-     * Returns the chunk at the given location in this.loadedChunks
-     * @param x X position in loadedChunks
-     * @param y Y position in loadedChunks
-     * @param z Z position in loadedChunks
+     * Returns the chunk at the given location in this.activeChunks
+     * @param x X position in activeChunks
+     * @param y Y position in activeChunks
+     * @param z Z position in activeChunks
      * @return the Chunk
      */
-    private Chunk getChunkLoadedCoords(int x, int y, int z) {
-        return this.loadedChunks[
+    private Chunk getActiveChunk(int x, int y, int z) {
+        return this.activeChunks[
                 x +
                 (y * CHUNKS_WIDE * CHUNKS_WIDE) +
                 (z * CHUNKS_WIDE)];
@@ -175,19 +255,19 @@ public class ChunkManager {
 
     /**
      * Returns the Chunk that the given world coordinates are inside,
-     * if it is in loadedChunks
+     * if it is in activeChunks
      * @param x X position in world
      * @param y Y position in world
      * @param z Z position in world
      * @return the Chunk that contains position (x,y,z)
      */
     private Chunk getChunkAtWorldCoords(int x, int y, int z) {
-        Chunk center = this.loadedChunks[
+
+        float[] centerPosition = this.activeChunks[
                 (this.CHUNKS_WIDE / 2) +
                 (this.CHUNKS_HIGH / 2) * CHUNKS_WIDE * CHUNKS_WIDE +
-                (this.CHUNKS_WIDE / 2) * CHUNKS_WIDE];
-
-        float[] centerPosition = center.getPosition();
+                (this.CHUNKS_WIDE / 2) * CHUNKS_WIDE
+                ].getPosition();
 
         float xDif = x - centerPosition[0];
         float yDif = y - centerPosition[1];
@@ -197,7 +277,7 @@ public class ChunkManager {
         yDif = (float)Math.floor(yDif / Chunk.CHUNK_HEIGHT);
         zDif = (float)Math.floor(zDif / Chunk.CHUNK_WIDTH);
 
-        return this.loadedChunks[
+        return this.activeChunks[
                 ((this.CHUNKS_WIDE / 2) + (int)xDif) +
                 (((this.CHUNKS_HIGH / 2) + (int)yDif) * CHUNKS_WIDE * CHUNKS_WIDE) +
                 (((this.CHUNKS_WIDE / 2) + (int)zDif) * CHUNKS_WIDE)];
@@ -205,10 +285,15 @@ public class ChunkManager {
 
     /*
      * Return the block at the given world coordinates
-     * It should be in loadedChunks
+     * It should be in activeChunks
      */
     public int getBlock(int x, int y, int z) {
         Chunk c = getChunkAtWorldCoords(x, y, z);
+
+        // Hmmmmmmmmmmmmmmm
+        if (c == null || !c.isLoaded()){
+            return  0;
+        }
 
         x %= Chunk.CHUNK_WIDTH;
         y %= Chunk.CHUNK_HEIGHT;
@@ -276,9 +361,9 @@ public class ChunkManager {
             for (int z = 0; z < CHUNKS_WIDE; z++) {
                 for (int y = 0; y < CHUNKS_HIGH; y++) {
 
-                    if (this.getChunkLoadedCoords(x, y, z) == null) {
+                    if (getActiveChunk(x, y, z) == null) {
 
-                        loadedChunks[
+                        activeChunks[
                                  x +
                                 (z * CHUNKS_WIDE) +
                                 (y * CHUNKS_WIDE * CHUNKS_WIDE)]
@@ -286,10 +371,10 @@ public class ChunkManager {
                                 x - (CHUNKS_WIDE/2),
                                 y - (CHUNKS_HIGH/2),
                                 z - (CHUNKS_WIDE/2),
-                                this.playerChunk);
+                                activeChunksCenter);
                         i++;
                         if (i == maxChunksToLoad)
-                            break;
+                            return;
                     }
 
                 }
@@ -298,11 +383,11 @@ public class ChunkManager {
         }
     }
 
-    private Chunk loadChunk(int x, int y ,int z, int[] playerChunk) {
+    private Chunk loadChunk(int x, int y ,int z, Vector3f playerChunk) {
         Chunk newChunk = new Chunk(
-                (float)(x + playerChunk[0]) * Chunk.CHUNK_WIDTH,
-                (float)(y + playerChunk[1]) * Chunk.CHUNK_HEIGHT,
-                (float)(z + playerChunk[2]) * Chunk.CHUNK_WIDTH);
+                (float)(x + playerChunk.x) * Chunk.CHUNK_WIDTH,
+                (float)(y + playerChunk.y) * Chunk.CHUNK_HEIGHT,
+                (float)(z + playerChunk.z) * Chunk.CHUNK_WIDTH);
 
         ChunkLoader loader = new ChunkLoader(newChunk);
         loader.load();
@@ -322,7 +407,7 @@ public class ChunkManager {
     }
 
     public void saveAllChunks() {
-        for (Chunk c : loadedChunks)
+        for (Chunk c : activeChunks)
             saveChunk(c);
     }
 
@@ -346,9 +431,12 @@ public class ChunkManager {
             System.exit(-1);
         }
 
-        texUniformId = GL20.glGetUniformLocation(programId, "tex");
-        blocksUniformId = GL20.glGetUniformLocation(programId, "blocks");
+        uniformTextureId = GL20.glGetUniformLocation(programId, "uTexture");
+        uniformBlocksId = GL20.glGetUniformLocation(programId, "uBlocks");
         uniformMatrixId = GL20.glGetUniformLocation(programId, "transformMatrix");
+        uniformLightPositionsId = GL20.glGetUniformLocation(programId, "uLightPositions");
+        uniformLightColorsId = GL20.glGetUniformLocation(programId, "uLightColors");
+        uniformWorldPosOffset = GL20.glGetUniformLocation(programId, "uWorldPosOffset");
 
         GL20.glDetachShader(programId, vsId);
         GL20.glDetachShader(programId, fsId);
@@ -376,11 +464,29 @@ public class ChunkManager {
 
         GL13.glActiveTexture(0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
-        GL20.glUniform1i(texUniformId, 0);
+        GL20.glUniform1i(uniformTextureId, 0);
+
+        GL13.glActiveTexture(GL13.GL_TEXTURE1);
+        GL11.glBindTexture(GL31.GL_TEXTURE_BUFFER, blocksTextureId);
 
         GL20.glUniformMatrix4(uniformMatrixId, false, matrixBuffer);
+        GL20.glUniform3(uniformLightPositionsId, lightPositions);
+        GL20.glUniform4(uniformLightColorsId, lightColors);
+        GL20.glUniform1i(uniformBlocksId, 1);
 
-        for (Chunk c : loadedChunks) {
+        float x, y, z;
+       // x = (activeChunksCenter.x - (CHUNKS_WIDE/2)) * Chunk.CHUNK_WIDTH;
+        //y = (activeChunksCenter.y - (CHUNKS_HIGH/2)) * Chunk.CHUNK_HEIGHT;
+        //z = (activeChunksCenter.z - (CHUNKS_WIDE/2)) * Chunk.CHUNK_WIDTH;
+
+        //GL20.glUniform3f(uniformWorldPosOffset, x, y, z);
+        // for single chunk
+        GL20.glUniform3f(uniformWorldPosOffset,
+                activeChunksCenter.x * 32,
+                activeChunksCenter.y * 16,
+                activeChunksCenter.z * 32);
+
+        for (Chunk c : activeChunks) {
             if (c != null && c.isLoaded())
                 c.render();
         }

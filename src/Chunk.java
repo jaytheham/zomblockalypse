@@ -63,6 +63,10 @@ public class Chunk {
                         (z * CHUNK_WIDTH)];
     }
 
+    public int getBlock(int i) {
+        return blocks[i];
+    }
+
     public int[] getBlocks() {
         return blocks;
     }

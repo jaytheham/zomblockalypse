@@ -76,6 +76,7 @@ public class Game {
         }
         catch (Exception e) {
         }
+        chunkBaron.testLight();
 
         lastFPS = Sys.getTime();
 

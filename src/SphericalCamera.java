@@ -59,8 +59,8 @@ public class SphericalCamera {
 
         if (pitch > 90.0f)
             pitch = 90.0f;
-        else if (pitch < 0.0f) {
-            pitch = 0.0f;
+        else if (pitch < -90.0f) {
+            pitch = -90.0f;
         }
     }
 
@@ -74,6 +74,10 @@ public class SphericalCamera {
         lVector.normalise(lVector);
         uVector.normalise(uVector);
         fVector.normalise(fVector);
+
+        lVector.scale(0.24f);
+        uVector.scale(0.24f);
+        fVector.scale(0.24f);
 
         if (Mouse.isButtonDown(0)) {
             changeYaw(rotationSpeed * xChange);
@@ -144,11 +148,11 @@ public class SphericalCamera {
             FloatBuffer vertBuf = BufferUtils.createFloatBuffer(12);
             FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
 
-            float shift = 0.95f;
+            float shift = 0.98f;
 
             if (blockPos[3] != 0) { // xFace intersection
                 if (blockPos[3] > 0)
-                    shift = 0.05f;
+                    shift = 0.02f;
 
                 vertBuf.put(blockPos[0] + shift);
                 vertBuf.put((float)blockPos[1]);
@@ -168,7 +172,7 @@ public class SphericalCamera {
             }
             else if (blockPos[4] != 0) { // yFace intersection
                 if (blockPos[4] > 0)
-                    shift = 0.05f;
+                    shift = 0.02f;
 
                 vertBuf.put((float)blockPos[0]);
                 vertBuf.put(blockPos[1] + shift);
@@ -188,7 +192,7 @@ public class SphericalCamera {
             }
             else {  // zFace intersection
                 if (blockPos[5] > 0)
-                    shift = 0.05f;
+                    shift = 0.02f;
 
                 vertBuf.put((float)blockPos[0]);
                 vertBuf.put((float)blockPos[1]);
@@ -230,7 +234,7 @@ public class SphericalCamera {
             GL20.glUseProgram(0);
         }
         catch (Exception e) {
-            System.out.println(e.getMessage());
+            //System.out.println(e.getMessage());
         }
     }
 }
