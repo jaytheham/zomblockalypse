@@ -1,10 +1,10 @@
-import Shaders.ShaderUtils;
+import Utils.ShaderUtils;
+import Utils.Vector3i;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 public class ChunkManager {
@@ -16,8 +16,8 @@ public class ChunkManager {
 
     private Chunk[] activeChunks;
     private Player player;
-    private Vector3f activeChunksPlayerPos;
-    private Vector3f activeChunksCenter;
+    private Vector3i activeChunksPlayerPos;
+    private Vector3i activeChunksCenter;
 
     private int programId;
     private int uniformTextureId;
@@ -35,17 +35,17 @@ public class ChunkManager {
     protected ChunkManager(Player newPlayer) {
         player = newPlayer;
 
-        setupShader("src/Shaders/BlockVertex.glsl", "src/Shaders/BlockFragment.glsl");
+        setupShader("Shaders/BlockVertex.glsl", "Shaders/BlockFragment.glsl");
 
         activeChunks = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
-        activeChunksPlayerPos = new Vector3f();
+        activeChunksPlayerPos = new Vector3i();
 
         activeChunksPlayerPos.x = (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH);
         activeChunksPlayerPos.y = (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT);
         activeChunksPlayerPos.z = (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH);
 
-        activeChunksCenter = new Vector3f(activeChunksPlayerPos);
+        activeChunksCenter = new Vector3i(activeChunksPlayerPos);
 
         updateNullChunks(CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH);
 
@@ -62,7 +62,7 @@ public class ChunkManager {
         lightPositions.put(1.5f);
         lightPositions.put(9.5f);
         lightPositions.put(7.5f);
-        lightPositions.put(1.5f);
+        lightPositions.put(25.5f);
         lightPositions.put(12.5f);
         lightPositions.put(7.5f);
         lightPositions.put(31.5f);
@@ -80,35 +80,35 @@ public class ChunkManager {
         lightColors.put(1.0f);
         lightColors.put(0.0f);
         lightColors.put(0.0f);
-        lightColors.put(15.0f);
+        lightColors.put(25.0f);
         lightColors.put(0.0f);
         lightColors.put(1.0f);
         lightColors.put(0.0f);
-        lightColors.put(150.0f);
+        lightColors.put(25.0f);
         lightColors.put(0.0f);
         lightColors.put(0.0f);
         lightColors.put(1.0f);
-        lightColors.put(15.0f);
+        lightColors.put(25.0f);
+        lightColors.put(1.0f);
+        lightColors.put(0.5f);
+        lightColors.put(1.0f);
+        lightColors.put(20.0f);
+        lightColors.put(1.0f);
+        lightColors.put(1.0f);
+        lightColors.put(0.0f);
+        lightColors.put(0.0f);
+        lightColors.put(0.0f);
+        lightColors.put(1.0f);
         lightColors.put(1.0f);
         lightColors.put(0.0f);
         lightColors.put(1.0f);
-        lightColors.put(15.0f);
         lightColors.put(1.0f);
         lightColors.put(1.0f);
         lightColors.put(0.0f);
-        lightColors.put(45.0f);
-        lightColors.put(0.0f);
-        lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(15.0f);
-        lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(15.0f);
         lightColors.put(0.5f);
         lightColors.put(0.5f);
         lightColors.put(0.5f);
-        lightColors.put(15.0f);
+        lightColors.put(0.0f);
 
         lightColors.flip();
 
@@ -123,31 +123,29 @@ public class ChunkManager {
 
     public void update() {
 
-        int[] playerNewChunk = new int[3];
         int xChange, yChange, zChange;
 
-        playerNewChunk[0] = (int)Math.floor(this.player.getX() / Chunk.CHUNK_WIDTH);
-        playerNewChunk[1] = (int)Math.floor(this.player.getY() / Chunk.CHUNK_HEIGHT);
-        playerNewChunk[2] = (int)Math.floor(this.player.getZ() / Chunk.CHUNK_WIDTH);
+        activeChunksPlayerPos.x = (int)Math.floor(this.player.getX() / Chunk.CHUNK_WIDTH);
+        activeChunksPlayerPos.y = (int)Math.floor(this.player.getY() / Chunk.CHUNK_HEIGHT);
+        activeChunksPlayerPos.z = (int)Math.floor(this.player.getZ() / Chunk.CHUNK_WIDTH);
 
-        xChange = playerNewChunk[0] - (int)activeChunksCenter.x;
-        yChange = playerNewChunk[1] - (int)activeChunksCenter.y;
-        zChange = playerNewChunk[2] - (int)activeChunksCenter.z;
+        xChange = activeChunksPlayerPos.x - activeChunksCenter.x;
+        yChange = activeChunksPlayerPos.y - activeChunksCenter.y;
+        zChange = activeChunksPlayerPos.z - activeChunksCenter.z;
 
-        activeChunksPlayerPos.x = playerNewChunk[0];
-        activeChunksPlayerPos.y = playerNewChunk[1];
-        activeChunksPlayerPos.z = playerNewChunk[2];
-
-        if (xChange < -1 || xChange > 1
+        // Only perform a load if player has moved 2 or more chunks
+        // to prevent them flip-flopping between chunks and load thrashing
+        // It would be nice to have Y change at 1.5 instead of 2
+        if (       xChange < -1 || xChange > 1
                 || zChange < -1 || zChange > 1
                 || yChange < -1 || yChange > 1) {
 
             //This is used as a buffer so no need to null any chunks
             Chunk[] activeChunksTempBuffer = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
-            activeChunksCenter.x = playerNewChunk[0];
-            activeChunksCenter.y = playerNewChunk[1];
-            activeChunksCenter.z = playerNewChunk[2];
+            activeChunksCenter.x = activeChunksPlayerPos.x;
+            activeChunksCenter.y = activeChunksPlayerPos.y;
+            activeChunksCenter.z = activeChunksPlayerPos.z;
 
             int xStart = CHUNKS_WIDE - 1;
             int xEnd = -1 + -xChange;
@@ -186,6 +184,8 @@ public class ChunkManager {
 
 
                         //save this if it will be lost
+                        // Could compress these into: ?
+                        // ((xChange != 0) && (x != xStart + xChange))
                         if ((xChange > 0) && (x < xStart + xChange)) {
                             saveChunk(getActiveChunk(x, y, z));
                         }
@@ -234,15 +234,15 @@ public class ChunkManager {
      * @return the Chunk
      */
     private Chunk getActiveChunk(int x, int y, int z) {
-        return this.activeChunks[
-                x +
+        return activeChunks[
+                 x +
                 (y * CHUNKS_WIDE * CHUNKS_WIDE) +
                 (z * CHUNKS_WIDE)];
     }
 
     /**
-     * Returns the Chunk that the given world coordinates are inside,
-     * if it is in activeChunks
+     * Returns the Chunk that the given world coordinates are inside.
+     * Does NOT check if these coordinates are within activeChunks.
      * @param x X position in world
      * @param y Y position in world
      * @param z Z position in world
@@ -250,34 +250,31 @@ public class ChunkManager {
      */
     private Chunk getChunkAtWorldCoords(int x, int y, int z) {
 
-        float[] centerPosition = this.activeChunks[
-                (this.CHUNKS_WIDE / 2) +
-                (this.CHUNKS_HIGH / 2) * CHUNKS_WIDE * CHUNKS_WIDE +
-                (this.CHUNKS_WIDE / 2) * CHUNKS_WIDE
-                ].getPosition();
+        int[] position = activeChunks[0].getPosition();
+        // Should be safe to base off chunk 0 as it is always loaded first
+        // after any changes to activeChunks.
 
-        float xDif = x - centerPosition[0];
-        float yDif = y - centerPosition[1];
-        float zDif = z - centerPosition[2];
+        position[0] = (x - position[0]) / Chunk.CHUNK_WIDTH;
+        position[1] = (y - position[1]) / Chunk.CHUNK_HEIGHT;
+        position[2] = (z - position[2]) / Chunk.CHUNK_WIDTH;
 
-        xDif = (float)Math.floor(xDif / Chunk.CHUNK_WIDTH);
-        yDif = (float)Math.floor(yDif / Chunk.CHUNK_HEIGHT);
-        zDif = (float)Math.floor(zDif / Chunk.CHUNK_WIDTH);
-
-        return this.activeChunks[
-                ((this.CHUNKS_WIDE / 2) + (int)xDif) +
-                (((this.CHUNKS_HIGH / 2) + (int)yDif) * CHUNKS_WIDE * CHUNKS_WIDE) +
-                (((this.CHUNKS_WIDE / 2) + (int)zDif) * CHUNKS_WIDE)];
+        return activeChunks[
+                position[0] +
+                (position[1] * CHUNKS_WIDE * CHUNKS_WIDE) +
+                (position[2] * CHUNKS_WIDE)];
     }
 
-    /*
-     * Return the block at the given world coordinates
-     * It should be in activeChunks
+    /**
+     * Return the value of the block at the given world coordinates.
+     * Does NOT check if these coordinates are within activeChunks.
+     * @param x
+     * @param y
+     * @param z
+     * @return the value of the block, or 0 if the chunk is not loaded.
      */
     public int getBlock(int x, int y, int z) {
         Chunk c = getChunkAtWorldCoords(x, y, z);
 
-        // Hmmmmmmmmmmmmmmm
         if (c == null || !c.isLoaded()){
             return  0;
         }
@@ -322,7 +319,6 @@ public class ChunkManager {
         y %= Chunk.CHUNK_HEIGHT;
         z %= Chunk.CHUNK_WIDTH;
 
-        // Could remove if statements here by doing the adding first, then modding??
         if (x < 0)
             x = Chunk.CHUNK_WIDTH + x;
         if (y < 0)
@@ -354,10 +350,10 @@ public class ChunkManager {
                                  x +
                                 (z * CHUNKS_WIDE) +
                                 (y * CHUNKS_WIDE * CHUNKS_WIDE)]
-                                = this.loadChunk(
-                                x - (CHUNKS_WIDE/2),
-                                y - (CHUNKS_HIGH/2),
-                                z - (CHUNKS_WIDE/2),
+                                = loadChunk(
+                                x - (CHUNKS_WIDE / 2),
+                                y - (CHUNKS_HIGH / 2),
+                                z - (CHUNKS_WIDE / 2),
                                 activeChunksCenter);
                         i++;
                         if (i == maxChunksToLoad)
@@ -365,23 +361,22 @@ public class ChunkManager {
                     }
 
                 }
-
             }
         }
     }
 
-    private Chunk loadChunk(int x, int y ,int z, Vector3f playerChunk) {
+    private Chunk loadChunk(int x, int y ,int z, Vector3i playerChunk) {
         Chunk newChunk = new Chunk(
-                (float)(x + playerChunk.x) * Chunk.CHUNK_WIDTH,
-                (float)(y + playerChunk.y) * Chunk.CHUNK_HEIGHT,
-                (float)(z + playerChunk.z) * Chunk.CHUNK_WIDTH);
+                (x + playerChunk.x) * Chunk.CHUNK_WIDTH,
+                (y + playerChunk.y) * Chunk.CHUNK_HEIGHT,
+                (z + playerChunk.z) * Chunk.CHUNK_WIDTH);
 
         ChunkLoader loader = new ChunkLoader(newChunk);
         loader.load();
 
         //for (int i = 0; i < 1024; i++)
         //    newChunk.setBlock(i, 1);
-        //newChunk.setIsLoaded();
+        //newChunk.hasBeenLoaded();
 
         return newChunk;
     }
@@ -431,13 +426,17 @@ public class ChunkManager {
         textureId = GL11.glGenTextures();
         GL13.glActiveTexture(0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
         Utils.TextureLoader.loadPNG("res/block_textures.png");
+
+
         // Unbind stuff?
+
     }
 
     public void render(Matrix4f perspectiveMatrix) {

@@ -37,12 +37,12 @@ void main(void) {
     in_TexCoord.x += in_BlockType;
 
     // 20.0f is the number of block textures wide and high the texture atlas is
-    while (in_TexCoord.x > 20.0f) {
+    while (in_TexCoord.x > 10.0f) {
         in_TexCoord.y += 1.0f;
-        in_TexCoord.x -= 20.0f;
+        in_TexCoord.x -= 10.0f;
     }
 
 
-    pass_TexCoord.x = in_TexCoord.x / 20.0f;
-    pass_TexCoord.y = in_TexCoord.y / 20.0f;
+    pass_TexCoord.x = in_TexCoord.x / 10.0f;
+    pass_TexCoord.y = in_TexCoord.y / 10.0f;
 }

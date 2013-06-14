@@ -29,9 +29,9 @@ public class ChunkSaver {
 
     private void saveChunk() {
         String fileName = "save/" +
-                (int)c.getPosition()[0] + "_" +
-                (int)c.getPosition()[1] + "_" +
-                (int)c.getPosition()[2] + ".cnk";
+                c.getPosition()[0] + "_" +
+                c.getPosition()[1] + "_" +
+                c.getPosition()[2] + ".cnk";
         try {
             FileOutputStream fos = new FileOutputStream(fileName);
             BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -46,7 +46,7 @@ public class ChunkSaver {
             bos.close();
             fos.close();
 
-            c.wasSaved();
+            c.hasBeenSaved();
         }
         catch (IOException e) {
             System.out.println("Failed to save file: " + c.getPosition()[0] + " " +

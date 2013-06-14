@@ -1,4 +1,4 @@
-package Shaders;
+package Utils;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
@@ -7,13 +7,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-/**
- * Created with IntelliJ IDEA.
- * User: Jay
- * Date: 9/06/13
- * Time: 7:14 PM
- * To change this template use File | Settings | File Templates.
- */
+
 public class ShaderUtils {
 
     /**

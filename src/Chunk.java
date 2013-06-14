@@ -8,13 +8,15 @@ public class Chunk {
     public static final int CHUNK_WIDTH = 32;
     public static final int CHUNK_HEIGHT = 16;
 
-    private static final float uvMin = 0.02f;// + (1.0f / 32.0f); //32 = x of a single texture
-    private static final float uvMax = 0.98f;// - (1.0f / 32.0f); //32 = y of a single texture
+    // Prevent the texture atlas from edge bleeding
+    // Cuts off part of the edge pixel
+    private static final float uvMin = 0.02f;
+    private static final float uvMax = 0.98f;
 
-    private float[] position;
+    private int[] position;
     private int[] blocks;
     private int vbo;
-    private int elements;
+    private int numFloatsInVBO;
     private boolean hasChanged;
     private boolean unsavedChanges;
     private boolean isLoaded;
@@ -25,20 +27,20 @@ public class Chunk {
      * @param y Multiple of CHUNK_HEIGHT
      * @param z The Z position of the top left corner, a multiple of CHUNK_WIDTH
      */
-    public Chunk(float x, float y, float z) {
+    public Chunk(int x, int y, int z) {
         blocks = new int[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH];
-        position = new float[] {x, y, z};
+        position = new int[] {x, y, z};
         vbo = GL15.glGenBuffers();
         hasChanged = true;
         unsavedChanges = false;
         isLoaded = false;
     }
 
-    public float[] getPosition() {
-        return position;
+    public int[] getPosition() {
+        return position.clone();
     }
 
-    public void setIsLoaded() {
+    public void hasBeenLoaded() {
         isLoaded = true;
     }
 
@@ -58,9 +60,9 @@ public class Chunk {
      * @return The int value of the block
      */
     public int getBlock(int x, int y, int z) {
-        return blocks[   x +
-                        (y * CHUNK_WIDTH * CHUNK_WIDTH) +
-                        (z * CHUNK_WIDTH)];
+        return blocks[ x +
+                      (y * CHUNK_WIDTH * CHUNK_WIDTH) +
+                      (z * CHUNK_WIDTH)];
     }
 
     public int getBlock(int i) {
@@ -75,14 +77,14 @@ public class Chunk {
         return unsavedChanges;
     }
 
-    public void wasSaved() {
+    public void hasBeenSaved() {
         unsavedChanges = false;
     }
 
     public void setBlock(int x, int y, int z, int newValue) {
-        blocks[x +
-                (y * CHUNK_WIDTH * CHUNK_WIDTH) +
-                (z * CHUNK_WIDTH)] = newValue;
+        blocks[ x +
+               (y * CHUNK_WIDTH * CHUNK_WIDTH) +
+               (z * CHUNK_WIDTH)] = newValue;
         hasChanged = true;
         unsavedChanges = true;
     }
@@ -97,22 +99,34 @@ public class Chunk {
     public void update() {
         hasChanged = false;
 
+        //
+        // This potentially isn't big enough
+        // Crash Crash Crash!!
+        //
         FloatBuffer vertBuf = BufferUtils.createFloatBuffer(
                 CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH * 8 * 3);
+
         int numFloatsAdded = 0;
+        int blockVal;
 
         for (int x = 0; x < CHUNK_WIDTH; x++) {
             for (int y = 0; y < CHUNK_HEIGHT; y++) {
                 for (int z = 0; z < CHUNK_WIDTH; z++) {
-                    if (this.getBlock(x, y, z) == 0) {
+
+                    blockVal = getBlock(x, y, z);
+                    if (blockVal == 0) {
                         continue;
                     }
 
-                    int blockVal = this.getBlock(x, y, z);
+                    /*
+
+                    This should really really be changed to use an indexed array!
+
+                     */
 
                     //Bottom Tris
                     //If this is bottom of chunk or block below is nothing
-                    if (y - 1 < 0 || this.getBlock(x, y-1, z) == 0) {
+                    if (y == 0 || getBlock(x, y-1, z) == 0) {
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
                         vertBuf.put(this.position[2] + z);
@@ -172,7 +186,7 @@ public class Chunk {
 
                     //Top Tris
                     //If this is top of chunk or block above is nothing
-                    if (y + 1 > 15 || this.getBlock(x, y+1, z) == 0) {
+                    if (y == (CHUNK_HEIGHT - 1) || this.getBlock(x, y+1, z) == 0) {
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y + 1);
                         vertBuf.put(this.position[2] + z + 1);
@@ -232,7 +246,7 @@ public class Chunk {
 
                     //Left Tris
                     //If this is left of chunk or block left is nothing
-                    if (x - 1 < 0 || this.getBlock(x-1, y, z) == 0) {
+                    if (x == 0 || this.getBlock(x-1, y, z) == 0) {
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
                         vertBuf.put(this.position[2] + z);
@@ -292,7 +306,7 @@ public class Chunk {
 
                     //Right Tris
                     //If this is right of chunk or block right is nothing
-                    if (x + 1 > 31 || this.getBlock(x+1, y, z) == 0) {
+                    if (x == (CHUNK_WIDTH - 1) || this.getBlock(x+1, y, z) == 0) {
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
                         vertBuf.put(this.position[2] + z + 1);
@@ -352,7 +366,7 @@ public class Chunk {
 
                     //Back Tris
                     //If this is back of chunk or block behind is nothing
-                    if (z - 1 < 0 || this.getBlock(x, y, z-1) == 0) {
+                    if (z == 0 || this.getBlock(x, y, z-1) == 0) {
                         vertBuf.put(this.position[0] + x + 1);
                         vertBuf.put(this.position[1] + y + 1);
                         vertBuf.put(this.position[2] + z);
@@ -412,7 +426,7 @@ public class Chunk {
 
                     //Front Tris
                     //If this is front of chunk or block ahead is nothing
-                    if (z + 1 > 31 || this.getBlock(x, y, z+1) == 0) {
+                    if (z == (CHUNK_WIDTH - 1) || this.getBlock(x, y, z+1) == 0) {
                         vertBuf.put(this.position[0] + x);
                         vertBuf.put(this.position[1] + y);
                         vertBuf.put(this.position[2] + z + 1);
@@ -474,9 +488,9 @@ public class Chunk {
                 }
             }
         }
-        this.elements = numFloatsAdded;
+        numFloatsInVBO = numFloatsAdded;
         vertBuf.flip();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertBuf, GL15.GL_STATIC_DRAW);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
     }
@@ -484,10 +498,10 @@ public class Chunk {
     public void render() {
 
         if (hasChanged) {
-            this.update();
+            update();
         }
 
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
         GL20.glEnableVertexAttribArray(2);
@@ -498,14 +512,13 @@ public class Chunk {
         GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, 28, 20);
         GL20.glVertexAttribPointer(3, 1, GL11.GL_FLOAT, false, 28, 24);
 
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, this.elements/7);
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numFloatsInVBO /7);
 
         GL20.glDisableVertexAttribArray(0);
         GL20.glDisableVertexAttribArray(1);
         GL20.glDisableVertexAttribArray(2);
         GL20.glDisableVertexAttribArray(3);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-
 
     }
 }

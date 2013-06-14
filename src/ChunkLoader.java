@@ -29,9 +29,9 @@ public class ChunkLoader {
 
     private void loadChunk() {
         String fileName = "save/" +
-                (int)c.getPosition()[0] + "_" +
-                (int)c.getPosition()[1] + "_" +
-                (int)c.getPosition()[2] + ".cnk";
+                c.getPosition()[0] + "_" +
+                c.getPosition()[1] + "_" +
+                c.getPosition()[2] + ".cnk";
         try {
             FileInputStream fis = new FileInputStream(fileName);
             BufferedInputStream bis = new BufferedInputStream(fis);
@@ -40,15 +40,15 @@ public class ChunkLoader {
             for (int i = 0; i < c.getNumBlocks(); i++) {
                 c.setBlock(i, dis.readInt());
             }
-            c.setIsLoaded();
+            c.hasBeenLoaded();
         }
         catch (IOException e) {
-            //System.out.println("Failed to load file: " + c.getPosition()[0] + " " +
-            //c.getPosition()[1] + " " + c.getPosition()[2]);
+            //System.out.println("Failed to load file: " + c.getPositionf()[0] + " " +
+            //c.getPositionf()[1] + " " + c.getPositionf()[2]);
             //for (int i = 0; i < c.getNumBlocks(); i++) {
             //    c.setBlock(i, 1);
             //}
-            c.setIsLoaded();
+            c.hasBeenLoaded();
         }
     }
 }

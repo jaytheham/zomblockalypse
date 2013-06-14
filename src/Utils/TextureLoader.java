@@ -2,6 +2,8 @@ package Utils;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL30;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -40,7 +42,9 @@ public class TextureLoader {
             }
 
             GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, tWidth, tHeight, 0,
                     GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
+
         }
 }

@@ -37,7 +37,6 @@ public class SphericalChaseCamera extends SphericalCamera {
             else if (distanceFromTarget < Constants.CAMERA_MIN_ZOOM)
                 distanceFromTarget = Constants.CAMERA_MIN_ZOOM;
         }
-        //yaw += rotationSpeed * xChange;
 
         if (Mouse.isButtonDown(2)) {
             yawAboutTarget += Settings.cameraRotateSensitivity * xChange;

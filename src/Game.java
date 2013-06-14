@@ -1,4 +1,4 @@
-import Shaders.ShaderUtils;
+import Utils.ShaderUtils;
 import Utils.CrossHair;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -42,7 +42,7 @@ public class Game {
                 .withProfileCore(true);
 
         try {
-            Display.setDisplayMode(new DisplayMode(800, 600));
+            Display.setDisplayMode(new DisplayMode(1280, 720));
             Display.create(pixelFormat, contextAttribs);
             Display.setTitle("Food, Water, --Shotgun");
         }
@@ -54,9 +54,10 @@ public class Game {
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glCullFace(GL11.GL_BACK);
         GL11.glFrontFace(GL11.GL_FRONT);
+        // Wireframe
         //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 
-        setupDefaultShaders("src/Shaders/DefaultVertex.glsl", "src/Shaders/DefaultFragment.glsl");
+        setupDefaultShaders("Shaders/DefaultVertex.glsl", "Shaders/DefaultFragment.glsl");
         setupPerspectiveMatrix();
 
         Player playerOne = new Player();
@@ -66,7 +67,7 @@ public class Game {
         SphericalCamera camera = cameraChase;
 
         CrossHair aimingRecticle = new CrossHair();
-        aimingRecticle.setupShader("src/Shaders/HudVertex.glsl", "src/Shaders/HudFragment.glsl");
+        aimingRecticle.setupShader("Shaders/HudVertex.glsl", "Shaders/HudFragment.glsl");
 
         ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
         Collider collider = new Collider();
@@ -86,7 +87,6 @@ public class Game {
 
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
             GL11.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
-
 
 
             camera.moveCamera((Mouse.getX() - mouseLastX)/(float)Display.getWidth(),
@@ -123,6 +123,20 @@ public class Game {
                         System.out.println(e.getMessage());
                     }
                 }
+                else if (Keyboard.getEventKey() == Keyboard.KEY_C && Keyboard.getEventKeyState()) {
+                    if (camera instanceof SphericalChaseCamera) {
+                        Vector3f camv = new Vector3f(camera.getPosition());
+                        camv.negate();
+                        cameraFPS.setPosition(camv);
+                        camera = cameraFPS;
+                    }
+                    else {
+                        camera = cameraChase;
+                    }
+                }
+                else if (Keyboard.getEventKey() == Keyboard.KEY_F1 && Keyboard.getEventKeyState()) {
+                    chunkBaron.saveAllChunks();
+                }
             }
 
             collider.collide(playerOne);
@@ -135,25 +149,10 @@ public class Game {
             camera.renderTargetBlock(pId, transformMatrixId, camXprjMatrix);
             aimingRecticle.render();
 
-            if (Keyboard.isKeyDown(Keyboard.KEY_F1))
-                chunkBaron.saveAllChunks();
-
-            if (Keyboard.isKeyDown(Keyboard.KEY_C)) {
-
-                if (camera instanceof SphericalChaseCamera) {
-                    Vector3f camv = new Vector3f(camera.getPosition());
-                    camv.negate();
-                    cameraFPS.setPosition(camv);
-                    camera = cameraFPS;
-                }
-                else {
-                    camera = cameraChase;
-                }
-            }
-
             Display.update();
         }
 
+        // Should clear buffers and textures off the GPU here
         ChunkSaver.close();
         ChunkLoader.close();
         Display.destroy();
@@ -192,9 +191,7 @@ public class Game {
      * @return The system time in milliseconds
      */
     public long getTimeMillis() {
-        long t = Sys.getTimerResolution();
         return (Sys.getTime() * 1000) / Sys.getTimerResolution();
-
     }
 
     public int getDelta() {
@@ -202,6 +199,9 @@ public class Game {
         int delta = (int)(time - lastFrameTime);
         lastFrameTime = time;
 
+        // Prevent freakish delta times due to pause etc
+        if (delta > 40)
+            delta = 40;
         return delta;
     }
 
@@ -234,7 +234,7 @@ public class Game {
     /**
      * Return the co-tangent of an angle.
      * @param angle The angle in Radians.
-     * @return
+     * @return the coTangent of the angle.
      */
     private float coTangent(float angle) {
         return (1.0f / (float)Math.tan((double)angle));

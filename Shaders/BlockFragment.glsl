@@ -30,11 +30,8 @@ void main(void) {
                 // Scale distance to range {0.0-1.0}
                 dist = dist / uLightColors[i].a;
                 dist += (dist - pow(dist,2));
-                //dist += (dist - pow(dist,2));
-                //finalLighting += uLightColors[i].rgb * ((1.0f - dist)*(-1 * dot(lightDirection, pass_Normal)));
-                //finalLighting += uLightColors[i].rgb * (-1 * dot(lightDirection, pass_Normal));
                 finalLighting += uLightColors[i].rgb * ((1.0f - dist) * (-1 * dotP + 0.5));
-                //finalLighting += uLightColors[i].rgb * (1/pow(dist/uLightColors[i].a + 1, 2));
+                //finalLighting += uLightColors[i].rgb * (-1 * dot(lightDirection, pass_Normal)) *(1.0f - dist/uLightColors[i].a);
             }
         }
         i += 1;
