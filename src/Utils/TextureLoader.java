@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 
 public class TextureLoader {
 
-        public static void loadPNG(String filepath) {
+        public static void loadPNG(String filepath, int format) {
 
             ByteBuffer buf = null;
             int tWidth = 0;
@@ -43,8 +43,7 @@ public class TextureLoader {
 
             GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
 
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, tWidth, tHeight, 0,
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, format, tWidth, tHeight, 0,
                     GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
-
         }
 }

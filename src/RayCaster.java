@@ -2,33 +2,15 @@ import org.lwjgl.util.vector.Vector3f;
 
 public class RayCaster {
     /**
-     * Call the callback with (x,y,z,value,face) of all blocks along the line
-     * segment from point 'origin' in vector direction 'direction' of length
-     * 'radius'. 'radius' may be infinite.
-     *
-     * 'face' is the normal vector of the face of that block that was entered.
-     * It should not be used after the callback returns.
-     *
-     * If the callback returns a true value, the traversal will be stopped.
+     * Trace the path from 'origin' along 'direction' until either
+     * a non-zero block is hit, or 'radius' is reached.
+     * @param origin The point to start the ray from.
+     * @param direction The direction the ray is moving.
+     * @param radius The maximum distance the ray will travel.
+     * @return The position and face of the block hit, or null if no block is hit.
+     * @throws Exception
      */
-    static int[] raycast(Vector3f origin, Vector3f direction, float radius) throws Exception {
-        // From "A Fast Voxel Traversal Algorithm for Ray Tracing"
-        // by John Amanatides and Andrew Woo, 1987
-        // <http://www.cse.yorku.ca/~amana/research/grid.pdf>
-        // <http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.3443>
-        // Extensions to the described algorithm:
-        //   • Imposed a distance limit.
-        //   • The face passed through to reach the current cube is provided to
-        //     the callback.
-
-        // The foundation of this algorithm is a parameterized representation of
-        // the provided ray,
-        //                    origin + t * direction,
-        // except that t is not actually stored; rather, at any given point in the
-        // traversal, we keep track of the *greater* t values which we would have
-        // if we took a step sufficient to cross a cube boundary along that axis
-        // (i.e. change the integer part of the coordinate) in the variables
-        // tMaxX, tMaxY, and tMaxZ.
+    static int[] raycast(Vector3f origin, Vector3f direction, float radius) {
 
         ChunkManager cm = ChunkManager.getInstance(null);
 
@@ -57,8 +39,10 @@ public class RayCaster {
         int[] face = new int[3];
 
         // Avoids an infinite loop.
-        if (dx == 0 && dy == 0 && dz == 0)
-            throw new Exception("Ray cast in 0 direction");
+        if (dx == 0 && dy == 0 && dz == 0) {
+            System.out.println("ERROR: Tried to cast ray in direction {0,0,0}");
+            return null;
+        }
 
         // Rescale from units of 1 cube-edge to units of 'direction' so we can
         // compare with 't'.

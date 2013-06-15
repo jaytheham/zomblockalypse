@@ -9,13 +9,15 @@ public class Collider {
 
     }
 
-    public void collide(Player p) {
+    public void collide(Collidable p) {
         ChunkManager c = ChunkManager.getInstance(null);
 
         Vector3f pos = p.getPosition();
         Vector3f nPos = new Vector3f(p.getNextPosition());
         Vector3f bnds = new Vector3f(p.getBoundingBoxSize());
         Vector2f reduce = new Vector2f();
+
+        nPos.y -= 0.4f; // Gravity
 
         boolean collided = false;
 
@@ -31,7 +33,7 @@ public class Collider {
                 break;
 
         // If step > 0, for s in 1->step
-            for (int i = 1; i <= p.STEP; i++) {
+            for (int i = 1; i <= p.getStep(); i++) {
                 // if test position (nPos + i) == OK
                 if (c.getBlock(nPos.x, nPos.y + i, nPos.z) == 0) {
                     // return nPos + i
@@ -40,7 +42,7 @@ public class Collider {
                 }
             }
         // If climb > 0, for c in step -> climb
-            for (int i = p.STEP; i <= p.CLIMB; i++) {
+            for (int i = p.getStep(); i <= p.getClimb(); i++) {
                 // if test position (nPos + i) == OK
                 // Perform climbing
                 // return

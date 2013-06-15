@@ -19,4 +19,16 @@ interface Collidable {
      * @param newPosition the position the object can move to without colliding.
      */
     void setPosition(Vector3f newPosition);
+
+    Vector3f getBoundingBoxSize();
+
+    /**
+     * If the collider detects a collision it calls this method after solving the collision.
+     */
+    void collided();
+
+    int getStep();
+
+    int getClimb();
+
 }

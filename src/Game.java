@@ -1,5 +1,4 @@
-import Utils.ShaderUtils;
-import Utils.CrossHair;
+import Utils.*;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -9,8 +8,6 @@ import org.lwjgl.Sys;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
-import Utils.Constants;
-
 public class Game {
 
     private int transformMatrixId;
@@ -18,8 +15,9 @@ public class Game {
     int mouseLastX = 0;
     int mouseLastY = 0;
 
-    double lastFPS;
+    double previousFrameTime;
     int fps;
+    int lastFps = 0;
 
     private long lastFrameTime = 0;
     private int timeDelta;
@@ -57,17 +55,19 @@ public class Game {
         // Wireframe
         //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 
+        ShaderProgram ShaderPrograms = new ShaderProgram();
         setupDefaultShaders("Shaders/DefaultVertex.glsl", "Shaders/DefaultFragment.glsl");
         setupPerspectiveMatrix();
 
+
         Player playerOne = new Player();
+        Zombie z1 = new Zombie(new Vector3f(8.0f, 1.0f, 4.0f));
 
         SphericalCamera cameraFPS = new SphericalCamera(new Vector3f(0,1,0));
         SphericalCamera cameraChase = new SphericalChaseCamera(playerOne);
         SphericalCamera camera = cameraChase;
 
         CrossHair aimingRecticle = new CrossHair();
-        aimingRecticle.setupShader("Shaders/HudVertex.glsl", "Shaders/HudFragment.glsl");
 
         ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
         Collider collider = new Collider();
@@ -78,11 +78,13 @@ public class Game {
         catch (Exception e) {
         }
 
-        lastFPS = Sys.getTime();
+        Text.init("res/Font1.png");
+        Gui debugMenu = new Gui();
 
+        previousFrameTime = Sys.getTime();
         while(!Display.isCloseRequested()) {
             Display.sync(60);
-            updateFPS();
+
             timeDelta = getDelta();
 
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
@@ -94,34 +96,29 @@ public class Game {
             mouseLastX = Mouse.getX();
             mouseLastY = Mouse.getY();
 
+            z1.update(playerOne.getPosition(), timeDelta);
             playerOne.move(timeDelta);
+
 
             while (Mouse.next()) {
                 if (Mouse.getEventButton() == 1 && Mouse.getEventButtonState()) {
-                    try {
-                        int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
-                        if (hitBlock != null) {
-                            hitBlock[0] += hitBlock[3];
-                            hitBlock[1] += hitBlock[4];
-                            hitBlock[2] += hitBlock[5];
-                            chunkBaron.setBlock(hitBlock, 1);
-                        }
-                    }
-                    catch (Exception e) {
-                        System.out.println(e.getMessage());
+
+                    //int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
+                    int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getRayToMousePosition(), Constants.MAX_PICK_DISTANCE);
+
+                    if (hitBlock != null) {
+                        hitBlock[0] += hitBlock[3];
+                        hitBlock[1] += hitBlock[4];
+                        hitBlock[2] += hitBlock[5];
+                        chunkBaron.setBlock(hitBlock, 1);
                     }
                 }
             }
             while (Keyboard.next()) {
                 if (Keyboard.getEventKey() == Keyboard.KEY_Y && Keyboard.getEventKeyState()) {
-                    try {
-                        int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
-                        if (hitBlock != null)
-                            chunkBaron.deleteBlock(hitBlock);
-                    }
-                    catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    }
+                    int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
+                    if (hitBlock != null)
+                        chunkBaron.deleteBlock(hitBlock);
                 }
                 else if (Keyboard.getEventKey() == Keyboard.KEY_C && Keyboard.getEventKeyState()) {
                     if (camera instanceof SphericalChaseCamera) {
@@ -140,15 +137,19 @@ public class Game {
             }
 
             collider.collide(playerOne);
+            collider.collide(z1);
 
             chunkBaron.update();
 
             Matrix4f.mul(projectionMatrix, camera.getMatrix(), camXprjMatrix);
             chunkBaron.render(camXprjMatrix);
             playerOne.render(pId, transformMatrixId, camXprjMatrix);
+            z1.render(pId, transformMatrixId, camXprjMatrix);
             camera.renderTargetBlock(pId, transformMatrixId, camXprjMatrix);
-            aimingRecticle.render();
+            aimingRecticle.render(ShaderPrograms.getHudProgramId());
+            debugMenu.render();
 
+            updateFPS();
             Display.update();
         }
 
@@ -206,18 +207,21 @@ public class Game {
     }
 
     private void updateFPS() {
-        if (Sys.getTime() - lastFPS > 1000) {
-            Display.setTitle("FPS: " + fps);
+        if (Sys.getTime() - previousFrameTime > 1000) {
+            Text.draw("FPS: " + fps, 20, 65);
+            lastFps = fps;
             fps = 0;
-            lastFPS += 1000;
+            previousFrameTime += 1000;
         }
+        else
+            Text.draw("FPS: " + lastFps, 20, 65);
         fps++;
     }
 
     private void setupPerspectiveMatrix() {
         projectionMatrix = new Matrix4f();
 
-        float fieldOfView = 60.0f;
+        float fieldOfView = Constants.FIELD_OF_VIEW;
         float aspectRatio = Display.getWidth() / (float)Display.getHeight();
         float nearPlane = 0.5f;
         float farPlane = 300.0f;

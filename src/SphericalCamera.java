@@ -115,13 +115,35 @@ public class SphericalCamera {
         Vector3f fVector = new Vector3f(matrix.m02, matrix.m12, matrix.m22);
         fVector.normalise();
         fVector.negate();
+
         return fVector;
+    }
+
+    public Vector3f getUpVector() {
+        calculateMatrix();
+
+        Vector3f up = new Vector3f(matrix.m01, matrix.m11, matrix.m21);
+        up.normalise();
+        return up;
+    }
+
+    public Vector3f getRightVector() {
+        calculateMatrix();
+
+        Vector3f right = new Vector3f(matrix.m00, matrix.m10, matrix.m20);
+        right.normalise();
+        return right;
     }
 
     public Vector3f getPosition() {
         Vector3f pVector = new Vector3f(position);
         pVector.negate();
+
         return pVector;
+    }
+
+    public Vector3f getRayToMousePosition() {
+        return getForwardsVector();
     }
 
     private void calculateMatrix() {

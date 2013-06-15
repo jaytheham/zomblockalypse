@@ -46,8 +46,6 @@ public class Player implements Collidable{
         FloatBuffer vertBuf = BufferUtils.createFloatBuffer(30);
         matrixBuffer = BufferUtils.createFloatBuffer(16);
         
-        int i = 0;
-        
         vertBuf.put(0.0f);
         vertBuf.put(0.0f);
         vertBuf.put(0.0f);
@@ -140,7 +138,7 @@ public class Player implements Collidable{
         moveDirection.scale(velocity * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f)));
 
         this.nextPosition.x = this.position.x;
-        this.nextPosition.y = this.position.y - 0.1f; //Gravity
+        this.nextPosition.y = this.position.y;
         this.nextPosition.z = this.position.z;
 
         this.nextPosition.x += moveDirection.x;// * (MOVE_UNITS_PER_SECOND * (timeDelta / 1000.0f));
@@ -151,6 +149,16 @@ public class Player implements Collidable{
     // This should be a function of the angle at which the collision took place
     public void collided() {
         velocity -= DECELERATION;
+    }
+
+    @Override
+    public int getStep() {
+        return STEP;
+    }
+
+    @Override
+    public int getClimb() {
+        return CLIMB;
     }
 
     public void setPosition(Vector3f newPosition) {

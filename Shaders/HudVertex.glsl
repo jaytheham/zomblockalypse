@@ -1,11 +1,11 @@
 #version 150 core
 
-in vec3 in_Position;
+in vec2 in_Position;
+in vec2 in_TexCoord;
 
-out vec4 pass_Color;
+out vec2 pass_TexCoord;
 
 void main(void) {
-    gl_Position = vec4(in_Position, 1.0f);
-
-    pass_Color = vec4(1.0f, 0.7f, 0.7f, 1.0f);
+    gl_Position = vec4(in_Position, -1.0f, 1.0f);
+    pass_TexCoord = in_TexCoord;
 }

@@ -92,7 +92,7 @@ public class ChunkManager {
         lightColors.put(1.0f);
         lightColors.put(0.5f);
         lightColors.put(1.0f);
-        lightColors.put(20.0f);
+        lightColors.put(200.0f);
         lightColors.put(1.0f);
         lightColors.put(1.0f);
         lightColors.put(0.0f);
@@ -432,7 +432,7 @@ public class ChunkManager {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
-        Utils.TextureLoader.loadPNG("res/block_textures.png");
+        Utils.TextureLoader.loadPNG("res/block_textures.png", GL11.GL_RGB);
 
 
         // Unbind stuff?
