@@ -19,7 +19,7 @@ public class SphericalCamera {
     protected Vector3f position;
     private Matrix4f matrix;
 
-    private int vbo;
+    protected int vbo;
 
     private float moveSpeed = 0.05f;
     protected float rotationSpeed = 90.0f;
@@ -161,7 +161,7 @@ public class SphericalCamera {
     public void renderTargetBlock(int pId, int uId, Matrix4f perspectiveMatrix) {
 
         try {
-            int[] blockPos = RayCaster.raycast(this.getPosition(), this.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
+            int[] blockPos = RayCaster.raycast(getPosition(), getForwardsVector(), Constants.MAX_PICK_DISTANCE);
 
             blockPos[0] += blockPos[3];
             blockPos[1] += blockPos[4];

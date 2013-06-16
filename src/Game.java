@@ -23,7 +23,7 @@ public class Game {
     private int timeDelta;
 
     //View
-    Matrix4f projectionMatrix;
+    public static Matrix4f projectionMatrix;
     Matrix4f camXprjMatrix = new Matrix4f();
 
 
@@ -71,12 +71,6 @@ public class Game {
 
         ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
         Collider collider = new Collider();
-
-        try {
-            Thread.sleep(500); // let loading happen before player starts colliding
-        }
-        catch (Exception e) {
-        }
 
         Text.init("res/Font1.png");
         Gui debugMenu = new Gui();
@@ -208,13 +202,13 @@ public class Game {
 
     private void updateFPS() {
         if (Sys.getTime() - previousFrameTime > 1000) {
-            Text.draw("FPS: " + fps, 20, 65);
+            Text.draw("FPS: " + fps, 1, 95);
             lastFps = fps;
             fps = 0;
             previousFrameTime += 1000;
         }
         else
-            Text.draw("FPS: " + lastFps, 20, 65);
+            Text.draw("FPS: " + lastFps, 1, 95);
         fps++;
     }
 

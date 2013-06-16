@@ -26,12 +26,18 @@ public class Text {
         Utils.TextureLoader.loadPNG(filepath, GL11.GL_RGB);
     }
 
+    /**
+     * Draw text 'text' at position x% from the left of the screen, y% from the bottom
+     * @param text The text string to draw.
+     * @param x The percent from the left of the screen to start the text.
+     * @param y The percent from the bottom of the screen to start the text.
+     */
     public static void draw(String text, float x, float y) {
         FloatBuffer buf = BufferUtils.createFloatBuffer(text.length() * 6 * 4);
 
-        x = -1.0f + (x / Display.getWidth());
-        y = 1.0f - (y / Display.getHeight());
-        float charSize = 48.0f / Display.getHeight();
+        x = (x - 50.0f) / 50.0f;
+        y = (y - 50.0f) / 50.0f;
+        float charSize = 36.0f / Display.getHeight();
         float charWidth = charSize / 2;
 
         char c = ' ';

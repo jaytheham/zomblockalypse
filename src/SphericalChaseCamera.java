@@ -1,8 +1,16 @@
 import Utils.Constants;
 import Utils.Settings;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+
+import java.nio.FloatBuffer;
 
 public class SphericalChaseCamera extends SphericalCamera {
     private Player playerTarget;
@@ -72,59 +80,128 @@ public class SphericalChaseCamera extends SphericalCamera {
 
     @Override
     public Vector3f getRayToMousePosition() {
-        float theX = Mouse.getX() / (float)Display.getWidth();
-        theX -= 0.5f;
-        float angleChange = (Constants.FIELD_OF_VIEW * 1.5f)* theX;
-        if (angleChange < 0.0f)
-            angleChange += 360.0f;
+        float x = (2.0f * Mouse.getX()) / Display.getWidth() - 1.0f;
+        float y = (2.0f * Mouse.getY()) / Display.getHeight() - 1.0f;
 
-        Vector3f forwardsV = getForwardsVector();
-        Vector3f upV = getUpVector();
-        Vector3f rayV = new Vector3f();
+        Vector4f rayViewPort = new Vector4f(x, y, -1.0f, 1.0f);
 
-        double angle = Math.toRadians(-angleChange);
+        Matrix4f workingMatrix = new Matrix4f(Game.projectionMatrix);
+        workingMatrix.invert();
+        Matrix4f.transform(workingMatrix, rayViewPort, rayViewPort);
 
-        float ux = upV.x*forwardsV.x;
-        float uy = upV.x*forwardsV.y;
-        float uz = upV.x*forwardsV.z;
-        float vx = upV.y*forwardsV.x;
-        float vy = upV.y*forwardsV.y;
-        float vz = upV.y*forwardsV.z;
-        float wx = upV.z*forwardsV.x;
-        float wy = upV.z*forwardsV.y;
-        float wz = upV.z*forwardsV.z;
-        float sa = (float)Math.sin(angle);
-        float ca = (float)Math.cos(angle);
-        rayV.x = upV.x*(ux+vy+wz)+(forwardsV.x*(upV.y*upV.y+upV.z*upV.z)-upV.x*(vy+wz))*ca+(-wy+vz)*sa;
-        rayV.y = upV.y*(ux+vy+wz)+(forwardsV.y*(upV.x*upV.x+upV.z*upV.z)-upV.y*(ux+wz))*ca+(wx-uz)*sa;
-        rayV.z = upV.z*(ux+vy+wz)+(forwardsV.z*(upV.x*upV.x+upV.y*upV.y)-upV.z*(ux+vy))*ca+(-vx+uy)*sa;
+        rayViewPort.z = -1.0f;
+        rayViewPort.w = 0.0f;
 
-        float theY = Mouse.getY() / (float)Display.getHeight();
-        theY -= 0.5f;
-         angleChange = (Constants.FIELD_OF_VIEW * 1.5f)* theY;
-        if (angleChange < 0.0f)
-            angleChange += 360.0f;
+        workingMatrix = getMatrix();
+        workingMatrix.invert();
 
-        forwardsV = rayV;
-        upV = getRightVector();
+        Matrix4f.transform(workingMatrix, rayViewPort, rayViewPort);
 
-        angle = Math.toRadians(angleChange);
+        Vector3f rayWorld = new Vector3f(rayViewPort.x, rayViewPort.y, rayViewPort.z);
 
-        ux = upV.x*forwardsV.x;
-        uy = upV.x*forwardsV.y;
-        uz = upV.x*forwardsV.z;
-        vx = upV.y*forwardsV.x;
-        vy = upV.y*forwardsV.y;
-        vz = upV.y*forwardsV.z;
-        wx = upV.z*forwardsV.x;
-        wy = upV.z*forwardsV.y;
-        wz = upV.z*forwardsV.z;
-        sa = (float)Math.sin(angle);
-        ca = (float)Math.cos(angle);
-        rayV.x = upV.x*(ux+vy+wz)+(forwardsV.x*(upV.y*upV.y+upV.z*upV.z)-upV.x*(vy+wz))*ca+(-wy+vz)*sa;
-        rayV.y = upV.y*(ux+vy+wz)+(forwardsV.y*(upV.x*upV.x+upV.z*upV.z)-upV.y*(ux+wz))*ca+(wx-uz)*sa;
-        rayV.z = upV.z*(ux+vy+wz)+(forwardsV.z*(upV.x*upV.x+upV.y*upV.y)-upV.z*(ux+vy))*ca+(-vx+uy)*sa;
+        return rayWorld;
+    }
 
-        return rayV;
+    @Override
+    public void renderTargetBlock(int pId, int uId, Matrix4f perspectiveMatrix) {
+
+        try {
+            int[] blockPos = RayCaster.raycast(getPosition(), getRayToMousePosition(), Constants.MAX_PICK_DISTANCE);
+
+            blockPos[0] += blockPos[3];
+            blockPos[1] += blockPos[4];
+            blockPos[2] += blockPos[5];
+
+            FloatBuffer vertBuf = BufferUtils.createFloatBuffer(12);
+            FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
+
+            float shift = 0.98f;
+
+            if (blockPos[3] != 0) { // xFace intersection
+                if (blockPos[3] > 0)
+                    shift = 0.02f;
+
+                vertBuf.put(blockPos[0] + shift);
+                vertBuf.put((float)blockPos[1]);
+                vertBuf.put((float)blockPos[2]);
+
+                vertBuf.put(blockPos[0] + shift);
+                vertBuf.put((float)blockPos[1]);
+                vertBuf.put(blockPos[2] + 1.0f);
+
+                vertBuf.put(blockPos[0] + shift);
+                vertBuf.put(blockPos[1] + 1.0f);
+                vertBuf.put(blockPos[2] + 1.0f);
+
+                vertBuf.put(blockPos[0] + shift);
+                vertBuf.put((float)blockPos[1] + 1.0f);
+                vertBuf.put((float)blockPos[2]);
+            }
+            else if (blockPos[4] != 0) { // yFace intersection
+                if (blockPos[4] > 0)
+                    shift = 0.02f;
+
+                vertBuf.put((float)blockPos[0]);
+                vertBuf.put(blockPos[1] + shift);
+                vertBuf.put((float)blockPos[2]);
+
+                vertBuf.put(blockPos[0] + 1.0f);
+                vertBuf.put(blockPos[1] + shift);
+                vertBuf.put((float)blockPos[2]);
+
+                vertBuf.put(blockPos[0] + 1.0f);
+                vertBuf.put(blockPos[1] + shift);
+                vertBuf.put(blockPos[2] + 1.0f);
+
+                vertBuf.put((float)blockPos[0]);
+                vertBuf.put(blockPos[1] + shift);
+                vertBuf.put(blockPos[2] + 1.0f);
+            }
+            else {  // zFace intersection
+                if (blockPos[5] > 0)
+                    shift = 0.02f;
+
+                vertBuf.put((float)blockPos[0]);
+                vertBuf.put((float)blockPos[1]);
+                vertBuf.put(blockPos[2] + shift);
+
+                vertBuf.put(blockPos[0] + 1.0f);
+                vertBuf.put((float)blockPos[1]);
+                vertBuf.put(blockPos[2] + shift);
+
+                vertBuf.put(blockPos[0] + 1.0f);
+                vertBuf.put(blockPos[1] + 1.0f);
+                vertBuf.put(blockPos[2] + shift);
+
+                vertBuf.put((float)blockPos[0]);
+                vertBuf.put(blockPos[1] + 1.0f);
+                vertBuf.put(blockPos[2] + shift);
+            }
+
+            vertBuf.flip();
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertBuf, GL15.GL_DYNAMIC_DRAW);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+
+            perspectiveMatrix.store(matrixBuffer);
+            matrixBuffer.flip();
+
+            GL20.glUseProgram(pId);
+
+            GL20.glUniformMatrix4(uId, false, matrixBuffer);
+
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
+            GL20.glEnableVertexAttribArray(0);
+            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+
+            GL11.glDrawArrays(GL11.GL_LINE_LOOP, 0, 4);
+
+            GL20.glDisableVertexAttribArray(0);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+            GL20.glUseProgram(0);
+        }
+        catch (Exception e) {
+            //System.out.println(e.getMessage());
+        }
     }
 }
