@@ -1,20 +1,59 @@
 #version 150 core
 
-in vec2 pass_TexCoord;
 in vec3 pass_WorldPosition;
 in vec3 pass_Normal;
+in float pass_BlockType;
 
-uniform vec3 uLightPositions[16];
-uniform vec4 uLightColors[16];
+uniform vec3 uLightPositions[8];
+uniform vec4 uLightColors[8];
 uniform sampler2D uTexture;
 
 void main(void) {
+
+    // Calculating tex coords
+    //--
+    const float TEX_ATLAS_WIDTH = 20.0f;
+
+    vec2 textureCoords;
+
+    if (pass_Normal.y != 0.0f) {
+        textureCoords.x = mod(pass_WorldPosition.x, 1.0f);
+        textureCoords.y = mod(pass_WorldPosition.z, 1.0f);
+    }
+    else {
+        textureCoords.x = mod(pass_WorldPosition.x + pass_WorldPosition.z, 1.0f);
+        textureCoords.y = mod(pass_WorldPosition.y, 1.0f);
+        textureCoords.y = 1.0f - textureCoords.y;
+    }
+
+    if (textureCoords.x < 0.02f) {
+        textureCoords.x = 0.02f;
+    }
+    else if (textureCoords.x > 0.98f) {
+        textureCoords.x = 0.98f;
+    }
+
+    if (textureCoords.y < 0.02f) {
+            textureCoords.y = 0.02f;
+    }
+    else if (textureCoords.y > 0.98f) {
+        textureCoords.y = 0.98f;
+    }
+
+    textureCoords.x += pass_BlockType;
+    while (textureCoords.x >= TEX_ATLAS_WIDTH) {
+        textureCoords.x -= TEX_ATLAS_WIDTH;
+        textureCoords.y += 1.0f;
+    }
+    textureCoords.x /= TEX_ATLAS_WIDTH;
+    textureCoords.y /= TEX_ATLAS_WIDTH;
+    //-
 
     int i = 0;
     vec3 finalLighting = vec3(0.0f, 0.0f, 0.0f);
 
     // Stop if reach a light with no range
-    while (uLightColors[i].a != 0.0f && i < 16) {
+    while (uLightColors[i].a != 0.0f && i < 8) {
 
         float dist = distance(uLightPositions[i], pass_WorldPosition);
 
@@ -36,7 +75,8 @@ void main(void) {
         }
         i += 1;
     }
-    vec4 textureColor = texture2D(uTexture, pass_TexCoord);
+
+    vec4 textureColor = texture2D(uTexture, textureCoords);
 
     // Set ambient level
     if (finalLighting.r < 0.05) finalLighting.r = 0.05f;

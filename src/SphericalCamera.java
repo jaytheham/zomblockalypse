@@ -161,7 +161,7 @@ public class SphericalCamera {
     public void renderTargetBlock(int pId, int uId, Matrix4f perspectiveMatrix) {
 
         try {
-            int[] blockPos = RayCaster.raycast(getPosition(), getForwardsVector(), Constants.MAX_PICK_DISTANCE);
+            int[] blockPos = RayCaster.getIntercept(getPosition(), getForwardsVector(), Constants.MAX_PICK_DISTANCE);
 
             blockPos[0] += blockPos[3];
             blockPos[1] += blockPos[4];

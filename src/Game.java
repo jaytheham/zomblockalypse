@@ -61,7 +61,7 @@ public class Game {
 
 
         Player playerOne = new Player();
-        Zombie z1 = new Zombie(new Vector3f(8.0f, 1.0f, 4.0f));
+        Zombie z1 = new Zombie(new Vector3f(8.0f, 4.0f, 4.0f));
 
         SphericalCamera cameraFPS = new SphericalCamera(new Vector3f(0,1,0));
         SphericalCamera cameraChase = new SphericalChaseCamera(playerOne);
@@ -77,8 +77,8 @@ public class Game {
 
         previousFrameTime = Sys.getTime();
         while(!Display.isCloseRequested()) {
-            Display.sync(60);
 
+            Display.sync(60);
             timeDelta = getDelta();
 
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
@@ -97,8 +97,8 @@ public class Game {
             while (Mouse.next()) {
                 if (Mouse.getEventButton() == 1 && Mouse.getEventButtonState()) {
 
-                    //int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
-                    int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getRayToMousePosition(), Constants.MAX_PICK_DISTANCE);
+                    //int[] hitBlock = RayCaster.getIntercept(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
+                    int[] hitBlock = RayCaster.getIntercept(camera.getPosition(), camera.getRayToMousePosition(), Constants.MAX_PICK_DISTANCE);
 
                     if (hitBlock != null) {
                         hitBlock[0] += hitBlock[3];
@@ -110,7 +110,7 @@ public class Game {
             }
             while (Keyboard.next()) {
                 if (Keyboard.getEventKey() == Keyboard.KEY_Y && Keyboard.getEventKeyState()) {
-                    int[] hitBlock = RayCaster.raycast(camera.getPosition(), camera.getForwardsVector(), Constants.MAX_PICK_DISTANCE);
+                    int[] hitBlock = RayCaster.getIntercept(camera.getPosition(), camera.getRayToMousePosition(), Constants.MAX_PICK_DISTANCE);
                     if (hitBlock != null)
                         chunkBaron.deleteBlock(hitBlock);
                 }
@@ -136,7 +136,7 @@ public class Game {
             chunkBaron.update();
 
             Matrix4f.mul(projectionMatrix, camera.getMatrix(), camXprjMatrix);
-            chunkBaron.render(camXprjMatrix);
+            chunkBaron.render(camXprjMatrix, camera.getPosition(), camera.getForwardsVector());
             playerOne.render(pId, transformMatrixId, camXprjMatrix);
             z1.render(pId, transformMatrixId, camXprjMatrix);
             camera.renderTargetBlock(pId, transformMatrixId, camXprjMatrix);

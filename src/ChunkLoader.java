@@ -45,9 +45,16 @@ public class ChunkLoader {
         catch (IOException e) {
             //System.out.println("Failed to load file: " + c.getPositionf()[0] + " " +
             //c.getPositionf()[1] + " " + c.getPositionf()[2]);
-            //for (int i = 0; i < c.getNumBlocks(); i++) {
-            //    c.setBlock(i, 1);
-            //}
+            if (c.getPosition()[1] < 0) {
+                for (int i = 0; i < c.getNumBlocks(); i++) {
+                    c.setBlock(i, 1);
+                }
+            }
+            else if (c.getPosition()[1] == 0) {
+                for (int i = 0; i < Chunk.CHUNK_WIDTH * Chunk.CHUNK_WIDTH; i++) {
+                    c.setBlock(i, 1);
+                }
+            }
             c.hasBeenLoaded();
         }
     }

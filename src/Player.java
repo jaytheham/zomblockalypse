@@ -32,14 +32,14 @@ public class Player implements Collidable{
     private FloatBuffer matrixBuffer;
 
     public Player() {
-        position = new Vector3f(2.0f, 4.0f, 2.0f);
-        nextPosition = new Vector3f(2.0f, 4.0f, 2.0f);
+        position = new Vector3f(0.0f, 4.0f, 0.0f);
+        nextPosition = new Vector3f(0.0f, 4.0f, 0.0f);
         forwardsVector = new Vector3f(0,0,0);
         rightVector = new Vector3f(0,0,0);
         rotation = 0.0f;
         velocity = 0.0f;
         moveDirection = new Vector3f(0.0f, 0.0f, 0.0f);
-        boundingBoxSize = new Vector3f(1.0f, 5.0f, 1.0f);
+        boundingBoxSize = new Vector3f(2.0f, 7.0f, 2.0f);
 
         vbo = GL15.glGenBuffers();
         
@@ -51,7 +51,7 @@ public class Player implements Collidable{
         vertBuf.put(0.0f);
 
         vertBuf.put(0.0f);
-        vertBuf.put(5.0f);
+        vertBuf.put(7.0f);
         vertBuf.put(0.0f);
 
 

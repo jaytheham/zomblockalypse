@@ -115,7 +115,7 @@ public class Zombie implements Collidable{
             direction.normalise();
             // Need to add eye height to position
             //
-            int[] result = RayCaster.raycast(position, direction, distance);
+            int[] result = RayCaster.getIntercept(position, direction, distance);
 
             if (result == null) {
                 alerted = true;
@@ -130,7 +130,7 @@ public class Zombie implements Collidable{
                 && direction.length() <= VIEW_DISTANCE
                 || distance < Constants.ONE_METRE_IN_UNITS / 2) {
 
-            int[] result = RayCaster.raycast(position, direction, distance);
+            int[] result = RayCaster.getIntercept(position, direction, distance);
             if (result == null) {
                 targetPosition.x = playerPos.x;
                 targetPosition.y = playerPos.y;
@@ -144,8 +144,8 @@ public class Zombie implements Collidable{
 
     /**
      * Calculate how far and in which direction to try move this frame.
-     * @param timeDelta
-     * @return
+     * @param timeDelta Number of milliseconds since the last frame
+     * @return A vector containing the desired next position
      */
     private Vector3f movement(int timeDelta) {
         if (velocity < 1.0f)

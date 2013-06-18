@@ -2,11 +2,13 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 public class Chunk {
 
-    public static final int CHUNK_WIDTH = 32;
-    public static final int CHUNK_HEIGHT = 16;
+    public static final int CHUNK_WIDTH = 40;
+    public static final int CHUNK_HEIGHT = 20;
 
     // Prevent the texture atlas from edge bleeding
     // Cuts off part of the edge pixel
@@ -15,8 +17,9 @@ public class Chunk {
 
     private int[] position;
     private int[] blocks;
-    private int vbo;
-    private int numFloatsInVBO;
+    private int verticesVbo;
+    private int indicesVbo;
+    private int numIndicesInVBO;
     private boolean hasChanged;
     private boolean unsavedChanges;
     private boolean isLoaded;
@@ -30,7 +33,8 @@ public class Chunk {
     public Chunk(int x, int y, int z) {
         blocks = new int[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH];
         position = new int[] {x, y, z};
-        vbo = GL15.glGenBuffers();
+        verticesVbo = GL15.glGenBuffers();
+        indicesVbo = GL15.glGenBuffers();
         hasChanged = true;
         unsavedChanges = false;
         isLoaded = false;
@@ -96,17 +100,15 @@ public class Chunk {
         unsavedChanges = true;
     }
 
-    public void update() {
+    private void update(ChunkManager chunkBaron) {
         hasChanged = false;
 
-        //
-        // This potentially isn't big enough
-        // Crash Crash Crash!!
-        //
-        FloatBuffer vertBuf = BufferUtils.createFloatBuffer(
-                CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH * 8 * 3);
+        FloatBuffer bufVertices = BufferUtils.createFloatBuffer(
+                (CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH) / 2 * 5 * 4 * 5);
+        IntBuffer indicesBuf = BufferUtils.createIntBuffer(
+                (CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH) / 2 * 5 * 6);
 
-        int numFloatsAdded = 0;
+        int indiceNum = 0;
         int blockVal;
 
         for (int x = 0; x < CHUNK_WIDTH; x++) {
@@ -120,404 +122,319 @@ public class Chunk {
 
                     /*
 
-                    This should really really be changed to use an indexed array!
+                    This should probably be packed into non interleaved data of smaller types
 
                      */
 
+                    //
+                    //
+                    //
+                    //
+                    // Try making the offset 0.999 instead of 1 so tex coords can be
+                    // calculated in the vertex shader
+                    //
+
+                    /*// Bottom tris should NEVER be seen with gamecam
                     //Bottom Tris
                     //If this is bottom of chunk or block below is nothing
                     if (y == 0 || getBlock(x, y-1, z) == 0) {
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-2.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-2.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-2.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-2.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-2.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-2.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-2.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-2.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z + 1);
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indicesBuf.put(indiceNum - 3);
+                        indiceNum++;
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-2.0f);
+                        numFloatsAdded += 20;
+                    } */
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z + 1);
-
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-2.0f);
-
-                        numFloatsAdded += 42;
-                    }
 
                     //Top Tris
                     //If this is top of chunk or block above is nothing
                     if (y == (CHUNK_HEIGHT - 1) || this.getBlock(x, y+1, z) == 0) {
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(2.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(2.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(2.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(2.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(2.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(2.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(2.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(2.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
-
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(2.0f);
-
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z);
-
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(2.0f);
-
-                        numFloatsAdded += 42;
+                        indicesBuf.put(indiceNum); // 0
+                        indiceNum++;
+                        indicesBuf.put(indiceNum); // 1
+                        indiceNum++;
+                        indicesBuf.put(indiceNum); // 2
+                        indicesBuf.put(indiceNum - 1); // 1
+                        indicesBuf.put(indiceNum - 2); // 0
+                        indiceNum++;
+                        indicesBuf.put(indiceNum); // 3
+                        indiceNum++;
                     }
 
                     //Left Tris
                     //If this is left of chunk or block left is nothing
                     if (x == 0 || this.getBlock(x-1, y, z) == 0) {
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-1.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-1.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-1.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-1.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-1.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-1.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-1.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-1.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
-
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-1.0f);
-
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z);
-
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-1.0f);
-
-                        numFloatsAdded += 42;
+                        indicesBuf.put(indiceNum); // 0
+                        indiceNum++;
+                        indicesBuf.put(indiceNum); // 1
+                        indiceNum++;
+                        indicesBuf.put(indiceNum); // 2
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indicesBuf.put(indiceNum - 3);
+                        indiceNum++;
                     }
 
                     //Right Tris
                     //If this is right of chunk or block right is nothing
                     if (x == (CHUNK_WIDTH - 1) || this.getBlock(x+1, y, z) == 0) {
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(1.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(1.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(1.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(1.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(1.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(1.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(1.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(1.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
-
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(1.0f);
-
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
-
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(1.0f);
-
-                        numFloatsAdded += 42;
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indicesBuf.put(indiceNum - 3);
+                        indiceNum++;
                     }
 
                     //Back Tris
                     //If this is back of chunk or block behind is nothing
                     if (z == 0 || this.getBlock(x, y, z-1) == 0) {
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-3.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-3.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-3.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-3.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-3.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-3.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-3.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(-3.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z);
-
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-3.0f);
-
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z);
-
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(-3.0f);
-
-                        numFloatsAdded += 42;
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indicesBuf.put(indiceNum - 3);
+                        indiceNum++;
                     }
 
                     //Front Tris
                     //If this is front of chunk or block ahead is nothing
                     if (z == (CHUNK_WIDTH - 1) || this.getBlock(x, y, z+1) == 0) {
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(3.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(3.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(3.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(3.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x + 1);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(3.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(3.0f);
 
-                        vertBuf.put(this.position[0] + x + 1);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
+                        bufVertices.put((float)this.position[0] + x);
+                        bufVertices.put((float)this.position[1] + y + 1);
+                        bufVertices.put((float)this.position[2] + z + 1);
 
-                        vertBuf.put(uvMax);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(3.0f);
+                        bufVertices.put(blockVal);
+                        bufVertices.put(3.0f);
 
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y + 1);
-                        vertBuf.put(this.position[2] + z + 1);
-
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMin);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(3.0f);
-
-                        vertBuf.put(this.position[0] + x);
-                        vertBuf.put(this.position[1] + y);
-                        vertBuf.put(this.position[2] + z + 1);
-
-                        vertBuf.put(uvMin);
-                        vertBuf.put(uvMax);
-                        vertBuf.put(blockVal);
-                        vertBuf.put(3.0f);
-
-                        numFloatsAdded += 42;
+                        indicesBuf.put(indiceNum); // 0
+                        indiceNum++;
+                        indicesBuf.put(indiceNum); // 1
+                        indiceNum++;
+                        indicesBuf.put(indiceNum); // 2
+                        indicesBuf.put(indiceNum);
+                        indiceNum++;
+                        indicesBuf.put(indiceNum);
+                        indicesBuf.put(indiceNum - 3);
+                        indiceNum++;
                     }
 
 
                 }
             }
         }
-        numFloatsInVBO = numFloatsAdded;
-        vertBuf.flip();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertBuf, GL15.GL_STATIC_DRAW);
+        numIndicesInVBO = indicesBuf.position();
+        indicesBuf.flip();
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesVbo);
+        GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuf, GL15.GL_STATIC_DRAW);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        bufVertices.flip();
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, verticesVbo);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufVertices, GL15.GL_STATIC_DRAW);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
     }
 
-    public void render() {
+    public void render(ChunkManager cm) {
 
         if (hasChanged) {
-            update();
+            update(cm);
         }
 
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, verticesVbo);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesVbo);
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
         GL20.glEnableVertexAttribArray(2);
-        GL20.glEnableVertexAttribArray(3);
 
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 28, 0);
-        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 28, 12);
-        GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, 28, 20);
-        GL20.glVertexAttribPointer(3, 1, GL11.GL_FLOAT, false, 28, 24);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 20, 0);
+        GL20.glVertexAttribPointer(1, 1, GL11.GL_FLOAT, false, 20, 12);
+        GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, 20, 16);
 
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numFloatsInVBO /7);
+        //GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numFloatsInVBO /7);
+        GL11.glDrawElements(GL11.GL_TRIANGLES, numIndicesInVBO, GL11.GL_UNSIGNED_INT, 0);
 
         GL20.glDisableVertexAttribArray(0);
         GL20.glDisableVertexAttribArray(1);
         GL20.glDisableVertexAttribArray(2);
-        GL20.glDisableVertexAttribArray(3);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 
     }

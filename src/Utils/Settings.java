@@ -2,13 +2,6 @@ package Utils;
 
 import org.lwjgl.input.Keyboard;
 
-/**
- * Created with IntelliJ IDEA.
- * User: Jay
- * Date: 7/06/13
- * Time: 8:50 PM
- * To change this template use File | Settings | File Templates.
- */
 public class Settings {
 
     public static int keyboardLeft = Keyboard.KEY_A;
@@ -26,6 +19,6 @@ public class Settings {
     public static int fpsCameraForwards = Keyboard.KEY_T;
     public static int fpsCameraBackwards = Keyboard.KEY_G;
 
-    public static float mouseScrollSensitivity = 0.003f;
+    public static float mouseScrollSensitivity = 0.004f;
     public static float cameraRotateSensitivity = 400.0f;
 }

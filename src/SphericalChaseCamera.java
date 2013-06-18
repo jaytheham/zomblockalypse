@@ -48,7 +48,7 @@ public class SphericalChaseCamera extends SphericalCamera {
         }
 
         if (Mouse.isButtonDown(2)) {
-            yawAboutTarget += Settings.cameraRotateSensitivity * xChange;
+            yawAboutTarget -= Settings.cameraRotateSensitivity * xChange;
             postionVector.x = -(float)Math.sin(Math.toRadians(yawAboutTarget));
             postionVector.z = -(float)Math.cos(Math.toRadians(yawAboutTarget));
 
@@ -72,10 +72,20 @@ public class SphericalChaseCamera extends SphericalCamera {
                         0.0f,
                         (float)Math.sin(Math.toRadians(360.0 - yawAboutTarget))));
 
+        Vector3f forwards = getForwardsVector();
+        forwards.y = 0.0f;
+        forwards.normalise();
+        pitch = (float)Math.toDegrees((double)Vector3f.angle(postionVector, forwards));
 
-        position.x = (postionVector.x * distanceFromTarget) - playerTarget.getX();
+        // Change pitch as camera zooms
+        float p = (distanceFromTarget - Constants.CAMERA_MIN_ZOOM) /
+                (Constants.CAMERA_MAX_ZOOM - Constants.CAMERA_MIN_ZOOM);
+        pitch += 15.0f * p;
+        p *= 12;
+
+        position.x = (postionVector.x * (distanceFromTarget - p)) - playerTarget.getX();
         position.y = (postionVector.y * distanceFromTarget) - playerTarget.getY();
-        position.z = (postionVector.z * distanceFromTarget) - playerTarget.getZ();
+        position.z = (postionVector.z * (distanceFromTarget - p)) - playerTarget.getZ();
     }
 
     @Override
@@ -97,111 +107,107 @@ public class SphericalChaseCamera extends SphericalCamera {
 
         Matrix4f.transform(workingMatrix, rayViewPort, rayViewPort);
 
-        Vector3f rayWorld = new Vector3f(rayViewPort.x, rayViewPort.y, rayViewPort.z);
-
-        return rayWorld;
+        return new Vector3f(rayViewPort.x, rayViewPort.y, rayViewPort.z);
     }
 
     @Override
     public void renderTargetBlock(int pId, int uId, Matrix4f perspectiveMatrix) {
 
-        try {
-            int[] blockPos = RayCaster.raycast(getPosition(), getRayToMousePosition(), Constants.MAX_PICK_DISTANCE);
+        int[] blockPos = RayCaster.getIntercept(getPosition(), getRayToMousePosition(), Constants.MAX_PICK_DISTANCE);
 
-            blockPos[0] += blockPos[3];
-            blockPos[1] += blockPos[4];
-            blockPos[2] += blockPos[5];
+        if (blockPos == null)
+            return;
 
-            FloatBuffer vertBuf = BufferUtils.createFloatBuffer(12);
-            FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
+        blockPos[0] += blockPos[3];
+        blockPos[1] += blockPos[4];
+        blockPos[2] += blockPos[5];
 
-            float shift = 0.98f;
+        FloatBuffer vertBuf = BufferUtils.createFloatBuffer(12);
+        FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
 
-            if (blockPos[3] != 0) { // xFace intersection
-                if (blockPos[3] > 0)
-                    shift = 0.02f;
+        float shift = 0.98f;
 
-                vertBuf.put(blockPos[0] + shift);
-                vertBuf.put((float)blockPos[1]);
-                vertBuf.put((float)blockPos[2]);
+        if (blockPos[3] != 0) { // xFace intersection
+            if (blockPos[3] > 0)
+                shift = 0.02f;
 
-                vertBuf.put(blockPos[0] + shift);
-                vertBuf.put((float)blockPos[1]);
-                vertBuf.put(blockPos[2] + 1.0f);
+            vertBuf.put(blockPos[0] + shift);
+            vertBuf.put((float)blockPos[1]);
+            vertBuf.put((float)blockPos[2]);
 
-                vertBuf.put(blockPos[0] + shift);
-                vertBuf.put(blockPos[1] + 1.0f);
-                vertBuf.put(blockPos[2] + 1.0f);
+            vertBuf.put(blockPos[0] + shift);
+            vertBuf.put((float)blockPos[1]);
+            vertBuf.put(blockPos[2] + 1.0f);
 
-                vertBuf.put(blockPos[0] + shift);
-                vertBuf.put((float)blockPos[1] + 1.0f);
-                vertBuf.put((float)blockPos[2]);
-            }
-            else if (blockPos[4] != 0) { // yFace intersection
-                if (blockPos[4] > 0)
-                    shift = 0.02f;
+            vertBuf.put(blockPos[0] + shift);
+            vertBuf.put(blockPos[1] + 1.0f);
+            vertBuf.put(blockPos[2] + 1.0f);
 
-                vertBuf.put((float)blockPos[0]);
-                vertBuf.put(blockPos[1] + shift);
-                vertBuf.put((float)blockPos[2]);
-
-                vertBuf.put(blockPos[0] + 1.0f);
-                vertBuf.put(blockPos[1] + shift);
-                vertBuf.put((float)blockPos[2]);
-
-                vertBuf.put(blockPos[0] + 1.0f);
-                vertBuf.put(blockPos[1] + shift);
-                vertBuf.put(blockPos[2] + 1.0f);
-
-                vertBuf.put((float)blockPos[0]);
-                vertBuf.put(blockPos[1] + shift);
-                vertBuf.put(blockPos[2] + 1.0f);
-            }
-            else {  // zFace intersection
-                if (blockPos[5] > 0)
-                    shift = 0.02f;
-
-                vertBuf.put((float)blockPos[0]);
-                vertBuf.put((float)blockPos[1]);
-                vertBuf.put(blockPos[2] + shift);
-
-                vertBuf.put(blockPos[0] + 1.0f);
-                vertBuf.put((float)blockPos[1]);
-                vertBuf.put(blockPos[2] + shift);
-
-                vertBuf.put(blockPos[0] + 1.0f);
-                vertBuf.put(blockPos[1] + 1.0f);
-                vertBuf.put(blockPos[2] + shift);
-
-                vertBuf.put((float)blockPos[0]);
-                vertBuf.put(blockPos[1] + 1.0f);
-                vertBuf.put(blockPos[2] + shift);
-            }
-
-            vertBuf.flip();
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertBuf, GL15.GL_DYNAMIC_DRAW);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-
-            perspectiveMatrix.store(matrixBuffer);
-            matrixBuffer.flip();
-
-            GL20.glUseProgram(pId);
-
-            GL20.glUniformMatrix4(uId, false, matrixBuffer);
-
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
-            GL20.glEnableVertexAttribArray(0);
-            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-
-            GL11.glDrawArrays(GL11.GL_LINE_LOOP, 0, 4);
-
-            GL20.glDisableVertexAttribArray(0);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-            GL20.glUseProgram(0);
+            vertBuf.put(blockPos[0] + shift);
+            vertBuf.put((float)blockPos[1] + 1.0f);
+            vertBuf.put((float)blockPos[2]);
         }
-        catch (Exception e) {
-            //System.out.println(e.getMessage());
+        else if (blockPos[4] != 0) { // yFace intersection
+            if (blockPos[4] > 0)
+                shift = 0.02f;
+
+            vertBuf.put((float)blockPos[0]);
+            vertBuf.put(blockPos[1] + shift);
+            vertBuf.put((float)blockPos[2]);
+
+            vertBuf.put(blockPos[0] + 1.0f);
+            vertBuf.put(blockPos[1] + shift);
+            vertBuf.put((float)blockPos[2]);
+
+            vertBuf.put(blockPos[0] + 1.0f);
+            vertBuf.put(blockPos[1] + shift);
+            vertBuf.put(blockPos[2] + 1.0f);
+
+            vertBuf.put((float)blockPos[0]);
+            vertBuf.put(blockPos[1] + shift);
+            vertBuf.put(blockPos[2] + 1.0f);
         }
+        else {  // zFace intersection
+            if (blockPos[5] > 0)
+                shift = 0.02f;
+
+            vertBuf.put((float)blockPos[0]);
+            vertBuf.put((float)blockPos[1]);
+            vertBuf.put(blockPos[2] + shift);
+
+            vertBuf.put(blockPos[0] + 1.0f);
+            vertBuf.put((float)blockPos[1]);
+            vertBuf.put(blockPos[2] + shift);
+
+            vertBuf.put(blockPos[0] + 1.0f);
+            vertBuf.put(blockPos[1] + 1.0f);
+            vertBuf.put(blockPos[2] + shift);
+
+            vertBuf.put((float)blockPos[0]);
+            vertBuf.put(blockPos[1] + 1.0f);
+            vertBuf.put(blockPos[2] + shift);
+        }
+
+        vertBuf.flip();
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertBuf, GL15.GL_DYNAMIC_DRAW);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+
+        perspectiveMatrix.store(matrixBuffer);
+        matrixBuffer.flip();
+
+        GL20.glUseProgram(pId);
+
+        GL20.glUniformMatrix4(uId, false, matrixBuffer);
+
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
+        GL20.glEnableVertexAttribArray(0);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+
+        GL11.glDrawArrays(GL11.GL_LINE_LOOP, 0, 4);
+
+        GL20.glDisableVertexAttribArray(0);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+        GL20.glUseProgram(0);
     }
 }

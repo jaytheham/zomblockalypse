@@ -11,13 +11,14 @@ public class ChunkManager {
 
     private static ChunkManager instance = null;
     //These must be odd numbers
-    private final int CHUNKS_WIDE = 7;
-    private final int CHUNKS_HIGH = 5;
+    private final int CHUNKS_WIDE = 5;
+    private final int CHUNKS_HIGH = 3;
 
     private Chunk[] activeChunks;
     private Player player;
-    private Vector3i activeChunksPlayerPos;
-    private Vector3i activeChunksCenter;
+    // The center (in world coordinates) of the chunk in the middle of active chunks
+    // If the chunk in the middle is the one at 0,0,0, this will be 20,10,20
+    private Vector3i activeChunksCenterCenter;
 
     private int programId;
     private int uniformTextureId;
@@ -39,25 +40,26 @@ public class ChunkManager {
 
         activeChunks = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
-        activeChunksPlayerPos = new Vector3i();
+        activeChunksCenterCenter = new Vector3i();
 
-        activeChunksPlayerPos.x = (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH);
-        activeChunksPlayerPos.y = (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT);
-        activeChunksPlayerPos.z = (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH);
-
-        activeChunksCenter = new Vector3i(activeChunksPlayerPos);
+        activeChunksCenterCenter.x = Chunk.CHUNK_WIDTH *
+                (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
+        activeChunksCenterCenter.y = Chunk.CHUNK_HEIGHT *
+                (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
+        activeChunksCenterCenter.z = Chunk.CHUNK_WIDTH *
+                (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
 
         updateNullChunks(CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH);
 
         // This shouldn't be here eventually
-        lightPositions = BufferUtils.createFloatBuffer(16 * 3);
+        lightPositions = BufferUtils.createFloatBuffer(8 * 3);
         lightPositions.put(3.5f);
         lightPositions.put(7.5f);
-        lightPositions.put(1.5f);
+        lightPositions.put(35.5f);
         lightPositions.put(5.5f);
         lightPositions.put(7.5f);
-        lightPositions.put(1.5f);
-        lightPositions.put(7.5f);
+        lightPositions.put(-17.5f);
+        lightPositions.put(47.5f);
         lightPositions.put(7.5f);
         lightPositions.put(1.5f);
         lightPositions.put(9.5f);
@@ -76,22 +78,22 @@ public class ChunkManager {
         lightPositions.put(7.5f);
         lightPositions.put(1.5f);
         lightPositions.flip();
-        lightColors = BufferUtils.createFloatBuffer(16 * 4);
+        lightColors = BufferUtils.createFloatBuffer(8 * 4);
         lightColors.put(1.0f);
-        lightColors.put(0.0f);
-        lightColors.put(0.0f);
-        lightColors.put(25.0f);
-        lightColors.put(0.0f);
         lightColors.put(1.0f);
-        lightColors.put(0.0f);
-        lightColors.put(25.0f);
-        lightColors.put(0.0f);
-        lightColors.put(0.0f);
         lightColors.put(1.0f);
         lightColors.put(25.0f);
         lightColors.put(1.0f);
-        lightColors.put(0.5f);
+        lightColors.put(0.99f);
+        lightColors.put(0.97f);
+        lightColors.put(25.0f);
+        lightColors.put(0.0f);
+        lightColors.put(0.0f);
         lightColors.put(1.0f);
+        lightColors.put(25.0f);
+        lightColors.put(1.0f);
+        lightColors.put(0.99f);
+        lightColors.put(0.96f);
         lightColors.put(200.0f);
         lightColors.put(1.0f);
         lightColors.put(1.0f);
@@ -125,27 +127,31 @@ public class ChunkManager {
 
         int xChange, yChange, zChange;
 
-        activeChunksPlayerPos.x = (int)Math.floor(this.player.getX() / Chunk.CHUNK_WIDTH);
-        activeChunksPlayerPos.y = (int)Math.floor(this.player.getY() / Chunk.CHUNK_HEIGHT);
-        activeChunksPlayerPos.z = (int)Math.floor(this.player.getZ() / Chunk.CHUNK_WIDTH);
+        float xC, yC, zC;
 
-        xChange = activeChunksPlayerPos.x - activeChunksCenter.x;
-        yChange = activeChunksPlayerPos.y - activeChunksCenter.y;
-        zChange = activeChunksPlayerPos.z - activeChunksCenter.z;
+        xC = (player.getX() - activeChunksCenterCenter.x) / Chunk.CHUNK_WIDTH;
+        yC = (player.getY() - activeChunksCenterCenter.y) / Chunk.CHUNK_HEIGHT;
+        zC = (player.getZ() - activeChunksCenterCenter.z) / Chunk.CHUNK_WIDTH;
 
-        // Only perform a load if player has moved 2 or more chunks
+        // Only perform a load if player has moved 0.8/0.7 chunks from the center of the last
         // to prevent them flip-flopping between chunks and load thrashing
-        // It would be nice to have Y change at 1.5 instead of 2
-        if (       xChange < -1 || xChange > 1
-                || zChange < -1 || zChange > 1
-                || yChange < -1 || yChange > 1) {
+        if (       xC < -0.8f || xC > 0.8f
+                || zC < -0.8f || zC > 0.8f
+                || yC < -0.7f || yC > 0.7f) {
 
             //This is used as a buffer so no need to null any chunks
             Chunk[] activeChunksTempBuffer = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
-            activeChunksCenter.x = activeChunksPlayerPos.x;
-            activeChunksCenter.y = activeChunksPlayerPos.y;
-            activeChunksCenter.z = activeChunksPlayerPos.z;
+            activeChunksCenterCenter.x = Chunk.CHUNK_WIDTH *
+                    (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
+            activeChunksCenterCenter.y = Chunk.CHUNK_HEIGHT *
+                    (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
+            activeChunksCenterCenter.z = Chunk.CHUNK_WIDTH *
+                    (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
+
+            xChange = (int)(xC * 2);
+            yChange = (int)(yC * 2);
+            zChange = (int)(zC * 2);
 
             int xStart = CHUNKS_WIDE - 1;
             int xEnd = -1 + -xChange;
@@ -242,11 +248,10 @@ public class ChunkManager {
 
     /**
      * Returns the Chunk that the given world coordinates are inside.
-     * Does NOT check if these coordinates are within activeChunks.
      * @param x X position in world
      * @param y Y position in world
      * @param z Z position in world
-     * @return the Chunk that contains position (x,y,z)
+     * @return the Chunk that contains position (x,y,z) or null if out of bounds
      */
     private Chunk getChunkAtWorldCoords(int x, int y, int z) {
 
@@ -258,6 +263,12 @@ public class ChunkManager {
         position[1] = (y - position[1]) / Chunk.CHUNK_HEIGHT;
         position[2] = (z - position[2]) / Chunk.CHUNK_WIDTH;
 
+        // Check chunk is currently loaded
+        if (position[0] >= CHUNKS_WIDE || position[0] < 0 ||
+            position[2] >= CHUNKS_WIDE || position[2] < 0 ||
+            position[1] >= CHUNKS_HIGH || position[1] < 0)
+            return null;
+
         return activeChunks[
                 position[0] +
                 (position[1] * CHUNKS_WIDE * CHUNKS_WIDE) +
@@ -266,7 +277,6 @@ public class ChunkManager {
 
     /**
      * Return the value of the block at the given world coordinates.
-     * Does NOT check if these coordinates are within activeChunks.
      * @param x
      * @param y
      * @param z
@@ -354,7 +364,7 @@ public class ChunkManager {
                                 x - (CHUNKS_WIDE / 2),
                                 y - (CHUNKS_HIGH / 2),
                                 z - (CHUNKS_WIDE / 2),
-                                activeChunksCenter);
+                                activeChunksCenterCenter);
                         i++;
                         if (i == maxChunksToLoad)
                             return;
@@ -367,9 +377,9 @@ public class ChunkManager {
 
     private Chunk loadChunk(int x, int y ,int z, Vector3i playerChunk) {
         Chunk newChunk = new Chunk(
-                (x + playerChunk.x) * Chunk.CHUNK_WIDTH,
-                (y + playerChunk.y) * Chunk.CHUNK_HEIGHT,
-                (z + playerChunk.z) * Chunk.CHUNK_WIDTH);
+                x * Chunk.CHUNK_WIDTH + (playerChunk.x - (Chunk.CHUNK_WIDTH / 2)),
+                y * Chunk.CHUNK_HEIGHT + (playerChunk.y - (Chunk.CHUNK_HEIGHT / 2)),
+                z * Chunk.CHUNK_WIDTH + (playerChunk.z - (Chunk.CHUNK_WIDTH / 2)));
 
         ChunkLoader loader = new ChunkLoader(newChunk);
         loader.load();
@@ -402,9 +412,9 @@ public class ChunkManager {
         GL20.glAttachShader(programId, fsId);
 
         GL20.glBindAttribLocation(programId, 0, "in_Position");
-        GL20.glBindAttribLocation(programId, 1, "in_TexCoord");
-        GL20.glBindAttribLocation(programId, 2, "in_BlockType");
-        GL20.glBindAttribLocation(programId, 3, "in_VertNormal");
+        GL20.glBindAttribLocation(programId, 1, "in_BlockType");
+        GL20.glBindAttribLocation(programId, 2, "in_VertNormal");
+
 
         GL20.glLinkProgram(programId);
 
@@ -439,7 +449,7 @@ public class ChunkManager {
 
     }
 
-    public void render(Matrix4f perspectiveMatrix) {
+    public void render(Matrix4f perspectiveMatrix, Vector3f camPosition, Vector3f camDirection) {
 
         FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
         perspectiveMatrix.store(matrixBuffer);
@@ -455,9 +465,21 @@ public class ChunkManager {
         GL20.glUniform3(uniformLightPositionsId, lightPositions);
         GL20.glUniform4(uniformLightColorsId, lightColors);
 
+        int[] cPos;
+        Vector3f cPosv = new Vector3f();
+        camDirection.negate();
+        camDirection.scale(56.0f);
+        Vector3f.add(camPosition, camDirection, camPosition);
+
         for (Chunk c : activeChunks) {
-            if (c != null && c.isLoaded())
-                c.render();
+            if (c != null && c.isLoaded()) {
+                cPos = c.getPosition();
+                cPosv.set(cPos[0], cPos[1], cPos[2]);
+                Vector3f.sub(cPosv, camPosition, cPosv);
+                if (Math.toDegrees(Vector3f.angle(cPosv, camDirection)) > 120.0f) {
+                    c.render(this);
+                }
+            }
         }
 
         GL20.glUseProgram(0);
