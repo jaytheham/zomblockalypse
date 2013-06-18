@@ -54,66 +54,45 @@ public class ChunkManager {
         // This shouldn't be here eventually
         lightPositions = BufferUtils.createFloatBuffer(8 * 3);
         lightPositions.put(3.5f);
-        lightPositions.put(7.5f);
+        lightPositions.put(2.5f);
         lightPositions.put(35.5f);
+
         lightPositions.put(5.5f);
-        lightPositions.put(7.5f);
+        lightPositions.put(2.5f);
         lightPositions.put(-17.5f);
+
         lightPositions.put(47.5f);
-        lightPositions.put(7.5f);
+        lightPositions.put(2.5f);
         lightPositions.put(1.5f);
+
         lightPositions.put(9.5f);
-        lightPositions.put(7.5f);
+        lightPositions.put(2.5f);
         lightPositions.put(25.5f);
-        lightPositions.put(12.5f);
-        lightPositions.put(7.5f);
-        lightPositions.put(31.5f);
-        lightPositions.put(14.5f);
-        lightPositions.put(7.5f);
-        lightPositions.put(1.5f);
-        lightPositions.put(16.5f);
-        lightPositions.put(7.5f);
-        lightPositions.put(1.5f);
-        lightPositions.put(18.5f);
-        lightPositions.put(7.5f);
-        lightPositions.put(1.5f);
+
         lightPositions.flip();
+
         lightColors = BufferUtils.createFloatBuffer(8 * 4);
         lightColors.put(1.0f);
         lightColors.put(1.0f);
         lightColors.put(1.0f);
         lightColors.put(25.0f);
+
         lightColors.put(1.0f);
         lightColors.put(0.99f);
         lightColors.put(0.97f);
         lightColors.put(25.0f);
+
         lightColors.put(0.0f);
         lightColors.put(0.0f);
         lightColors.put(1.0f);
         lightColors.put(25.0f);
+
         lightColors.put(1.0f);
         lightColors.put(0.99f);
         lightColors.put(0.96f);
         lightColors.put(200.0f);
-        lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(0.0f);
-        lightColors.put(0.0f);
-        lightColors.put(0.0f);
-        lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(0.0f);
-        lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(0.0f);
-        lightColors.put(0.5f);
-        lightColors.put(0.5f);
-        lightColors.put(0.5f);
-        lightColors.put(0.0f);
 
         lightColors.flip();
-
     }
 
     public static ChunkManager getInstance(Player player) {
@@ -188,27 +167,30 @@ public class ChunkManager {
                 for (int z = zStart; z != zEnd; z += zInc) {
                     for (int x = xStart; x != xEnd; x += xInc) {
 
-
                         //save this if it will be lost
-                        // Could compress these into: ?
-                        // ((xChange != 0) && (x != xStart + xChange))
                         if ((xChange > 0) && (x < xStart + xChange)) {
                             saveChunk(getActiveChunk(x, y, z));
+                            getActiveChunk(x, y, z).cleanUp();
                         }
                         else if ((xChange < 0) && (x > xStart + xChange)) {
                             saveChunk(getActiveChunk(x, y, z));
+                            getActiveChunk(x, y, z).cleanUp();
                         }
                         else if ((zChange > 0) && (z < zStart + zChange)) {
                             saveChunk(getActiveChunk(x, y, z));
+                            getActiveChunk(x, y, z).cleanUp();
                         }
                         else if ((zChange < 0) && (z > zStart + zChange)) {
                             saveChunk(getActiveChunk(x, y, z));
+                            getActiveChunk(x, y, z).cleanUp();
                         }
                         else if ((yChange > 0) && (y < yStart + yChange)) {
                             saveChunk(getActiveChunk(x, y, z));
+                            getActiveChunk(x, y, z).cleanUp();
                         }
                         else if ((yChange < 0) && (y > yStart + yChange)) {
                             saveChunk(getActiveChunk(x, y, z));
+                            getActiveChunk(x, y, z).cleanUp();
                         }
 
                         //set this to (this + change)
@@ -259,9 +241,9 @@ public class ChunkManager {
         // Should be safe to base off chunk 0 as it is always loaded first
         // after any changes to activeChunks.
 
-        position[0] = (x - position[0]) / Chunk.CHUNK_WIDTH;
-        position[1] = (y - position[1]) / Chunk.CHUNK_HEIGHT;
-        position[2] = (z - position[2]) / Chunk.CHUNK_WIDTH;
+        position[0] = (int)Math.floor(((float)x - position[0]) / Chunk.CHUNK_WIDTH);
+        position[1] = (int)Math.floor(((float)y - position[1]) / Chunk.CHUNK_HEIGHT);
+        position[2] = (int)Math.floor(((float)z - position[2]) / Chunk.CHUNK_WIDTH);
 
         // Check chunk is currently loaded
         if (position[0] >= CHUNKS_WIDE || position[0] < 0 ||
@@ -271,8 +253,8 @@ public class ChunkManager {
 
         return activeChunks[
                 position[0] +
-                (position[1] * CHUNKS_WIDE * CHUNKS_WIDE) +
-                (position[2] * CHUNKS_WIDE)];
+               (position[1] * CHUNKS_WIDE * CHUNKS_WIDE) +
+               (position[2] * CHUNKS_WIDE)];
     }
 
     /**
@@ -324,6 +306,22 @@ public class ChunkManager {
     public void setBlock(int x, int y, int z, int newBlockVal) {
 
         Chunk c = getChunkAtWorldCoords(x, y, z);
+        if (c == null)
+            return;
+
+        // If setting a boundary block update the blocks it touches
+        if (x == 0)
+            getChunkAtWorldCoords(x - 1, y, z).invalidate();
+        else if (x == Chunk.CHUNK_WIDTH - 1)
+            getChunkAtWorldCoords(x + 1, y, z).invalidate();
+        if (y == 0)
+            getChunkAtWorldCoords(x, y - 1, z).invalidate();
+        else if (y == Chunk.CHUNK_HEIGHT - 1)
+            getChunkAtWorldCoords(x, y + 1, z).invalidate();
+        if (z == 0)
+            getChunkAtWorldCoords(x, y, z - 1).invalidate();
+        else if (z == Chunk.CHUNK_WIDTH - 1)
+            getChunkAtWorldCoords(x, y, z + 1).invalidate();
 
         x %= Chunk.CHUNK_WIDTH;
         y %= Chunk.CHUNK_HEIGHT;
@@ -414,7 +412,6 @@ public class ChunkManager {
         GL20.glBindAttribLocation(programId, 0, "in_Position");
         GL20.glBindAttribLocation(programId, 1, "in_BlockType");
         GL20.glBindAttribLocation(programId, 2, "in_VertNormal");
-
 
         GL20.glLinkProgram(programId);
 

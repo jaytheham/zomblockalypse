@@ -1,8 +1,8 @@
 #version 150 core
 
 in vec3 in_Position;
-in float in_BlockType;
 in float in_VertNormal;
+in float in_BlockType;
 
 uniform mat4 transformMatrix;
 
@@ -13,7 +13,6 @@ out float pass_BlockType;
 void main(void) {
 
     vec3 normal;
-    float n;
     if (in_VertNormal == 2.0f)
         normal = vec3(0.0f, 1.0f, 0.0f);
     else if (in_VertNormal == 1.0f)
@@ -25,7 +24,7 @@ void main(void) {
     else if (in_VertNormal == -3.0f)
         normal = vec3(0.0f, 0.0f, -1.0f);
     else // -2
-        normal = vec3(0.0f, -1.0f, 0.0f);
+        normal = vec3(1.0f, 0.0f, 0.0f);
 
     pass_Normal = normal;
 
