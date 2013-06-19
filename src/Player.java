@@ -32,8 +32,8 @@ public class Player implements Collidable{
     private FloatBuffer matrixBuffer;
 
     public Player() {
-        position = new Vector3f(0.0f, 4.0f, 0.0f);
-        nextPosition = new Vector3f(0.0f, 4.0f, 0.0f);
+        position = new Vector3f(1.0f, 4.0f, 1.0f);
+        nextPosition = new Vector3f(1.0f, 4.0f, 1.0f);
         forwardsVector = new Vector3f(0,0,0);
         rightVector = new Vector3f(0,0,0);
         rotation = 0.0f;
@@ -195,6 +195,11 @@ public class Player implements Collidable{
 
     public Vector3f getBoundingBoxSize() {
         return boundingBoxSize;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%5.1f %5.1f %5.1f",position.x, position.y, position.z);
     }
 
     public void render(int programId, int uniformMatrixId, Matrix4f perspectiveMatrix) {

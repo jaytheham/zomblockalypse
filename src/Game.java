@@ -12,25 +12,23 @@ public class Game {
 
     private int transformMatrixId;
     private int pId = 0;
-    int mouseLastX = 0;
-    int mouseLastY = 0;
+    private int mouseLastX = 0;
+    private int mouseLastY = 0;
 
-    double previousFrameTime;
-    int fps;
-    int lastFps = 0;
-
+    private double previousFrameTime;
+    private int fps;
+    private int lastFps = 0;
     private long lastFrameTime = 0;
     private int timeDelta;
 
     //View
     public static Matrix4f projectionMatrix;
-    Matrix4f camXprjMatrix = new Matrix4f();
+    private Matrix4f camXprjMatrix = new Matrix4f();
 
 
     public static void main(String[] args){
         new Game();
     }
-
 
     public Game(){
 
@@ -42,12 +40,13 @@ public class Game {
         try {
             Display.setDisplayMode(new DisplayMode(1280, 720));
             Display.create(pixelFormat, contextAttribs);
-            Display.setTitle("Food, Water, --Shotgun");
-        }
-        catch (LWJGLException e) {
+            Display.setTitle("Food, Water, -Shotgun");
+        } catch (LWJGLException e) {
             e.printStackTrace();
+            System.out.println("Failed to create Display");
             System.exit(0);
         }
+
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glCullFace(GL11.GL_BACK);
@@ -59,7 +58,6 @@ public class Game {
         setupDefaultShaders("Shaders/DefaultVertex.glsl", "Shaders/DefaultFragment.glsl");
         setupPerspectiveMatrix();
 
-
         Player playerOne = new Player();
         Zombie z1 = new Zombie(new Vector3f(8.0f, 4.0f, 4.0f));
 
@@ -67,13 +65,11 @@ public class Game {
         SphericalCamera cameraChase = new SphericalChaseCamera(playerOne);
         SphericalCamera camera = cameraChase;
 
-        CrossHair aimingRecticle = new CrossHair();
-
         ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
         Collider collider = new Collider();
 
         Text.init("res/Font1.png");
-        Gui debugMenu = new Gui();
+
 
         previousFrameTime = Sys.getTime();
         while(!Display.isCloseRequested()) {
@@ -140,16 +136,15 @@ public class Game {
             playerOne.render(pId, transformMatrixId, camXprjMatrix);
             z1.render(pId, transformMatrixId, camXprjMatrix);
             camera.renderTargetBlock(pId, transformMatrixId, camXprjMatrix);
-            aimingRecticle.render(ShaderPrograms.getHudProgramId());
-            debugMenu.render();
 
             updateFPS();
+            Text.draw(playerOne.toString(), 1, 90);
             Display.update();
         }
 
         // Should clear buffers and textures off the GPU here
-        ChunkSaver.close();
         ChunkLoader.close();
+        ChunkSaver.close();
         Display.destroy();
     }
 
@@ -178,11 +173,9 @@ public class Game {
         GL20.glDetachShader(pId, fsId);
     }
 
-
-
+    
     /**
      * Get the time in milliseconds
-     *
      * @return The system time in milliseconds
      */
     public long getTimeMillis() {
@@ -201,14 +194,12 @@ public class Game {
     }
 
     private void updateFPS() {
+        Text.draw("FPS: " + lastFps, 1, 95);
         if (Sys.getTime() - previousFrameTime > 1000) {
-            Text.draw("FPS: " + fps, 1, 95);
             lastFps = fps;
             fps = 0;
             previousFrameTime += 1000;
         }
-        else
-            Text.draw("FPS: " + lastFps, 1, 95);
         fps++;
     }
 
@@ -219,7 +210,7 @@ public class Game {
         float aspectRatio = Display.getWidth() / (float)Display.getHeight();
         float nearPlane = 0.5f;
         float farPlane = 300.0f;
-        float yScale = this.coTangent(this.degreesToRadians((fieldOfView / 2.0f)));
+        float yScale = (float)coTangent(Math.toRadians((fieldOfView / 2.0f)));
 
         projectionMatrix.m00 = yScale / aspectRatio;
         projectionMatrix.m11 = yScale;
@@ -234,11 +225,7 @@ public class Game {
      * @param angle The angle in Radians.
      * @return the coTangent of the angle.
      */
-    private float coTangent(float angle) {
-        return (1.0f / (float)Math.tan((double)angle));
-    }
-
-    private float degreesToRadians(float degrees) {
-        return (float)(degrees * (Math.PI / 180.0d));
+    private float coTangent(double angle) {
+        return (1.0f / (float)Math.tan(angle));
     }
 }

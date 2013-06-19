@@ -152,6 +152,14 @@ public class Text {
                     u = 25 * TEX_CHAR_WIDTH;
                     v = 0.0f;
                     break;
+                case ' ':
+                    u = 26 * TEX_CHAR_WIDTH;
+                    v = 0.0f;
+                    break;
+                case '-':
+                    u = 27 * TEX_CHAR_WIDTH;
+                    v = 0.0f;
+                    break;
                 case '0':
                     u = 0.0f;
                     v = 0.5f;

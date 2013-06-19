@@ -3,6 +3,7 @@ import org.lwjgl.opengl.*;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
 public class Chunk {
@@ -23,6 +24,7 @@ public class Chunk {
     private boolean hasChanged;
     private boolean unsavedChanges;
     private boolean isLoaded;
+    private boolean objectsAreLoaded;
 
     private ArrayList<GameObject> objectList;
 
@@ -41,6 +43,7 @@ public class Chunk {
         unsavedChanges = false;
         isLoaded = false;
         objectList = new ArrayList<GameObject>();
+        objectsAreLoaded = false;
     }
 
     public void cleanUp() {
@@ -58,6 +61,21 @@ public class Chunk {
 
     public boolean isLoaded() {
         return isLoaded;
+    }
+
+    public void loadedObjects() {
+        objectsAreLoaded = true;
+    }
+
+    public void attachGameObject(GameObject o) {
+        objectList.add(o);
+    }
+
+    public ArrayList<GameObject> getGameObjects() {
+        if (objectsAreLoaded)
+            return objectList;
+        else
+            return null;
     }
 
     public int getNumBlocks() {
@@ -115,8 +133,8 @@ public class Chunk {
     private void update(ChunkManager chunkBaron) {
         hasChanged = false;
 
-        FloatBuffer bufVertices = BufferUtils.createFloatBuffer(
-                (CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH) / 2 * 5 * 4 * 5);
+        ShortBuffer bufVertices = BufferUtils.createShortBuffer(
+                (CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH) / 2 * 5 * 4 * 6);
         IntBuffer indicesBuf = BufferUtils.createIntBuffer(
                 (CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH) / 2 * 5 * 6);
 
@@ -132,12 +150,9 @@ public class Chunk {
                         continue;
                     }
 
-                    /*
-                    This should probably be packed into non interleaved data of smaller types
-                    Why when I tried to use shorts did it go wonky?
-                     */
+                    // Now that data is packed smaller, removing indices and having
+                    // duplicate verts would be the same size... also faster?
 
-                    //
                     // Try making the offset 0.999999 instead of 1 so tex coords can be
                     // calculated in the vertex shader
                     // = Some sparklies between edges
@@ -146,32 +161,32 @@ public class Chunk {
                     //Bottom Tris
                     //If this is bottom of chunk or block below is nothing
                     if (y == 0 || getBlock(x, y-1, z) == 0) {
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(this.position[2] + z));
 
-                        bufVertices.put(blockVal);
+                        bufVertices.put((short)blockVal);
                         bufVertices.put(-2.0f);
 
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(this.position[2] + z));
 
-                        bufVertices.put(blockVal);
+                        bufVertices.put((short)blockVal);
                         bufVertices.put(-2.0f);
 
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
 
-                        bufVertices.put(blockVal);
+                        bufVertices.put((short)blockVal);
                         bufVertices.put(-2.0f);
 
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
 
-                        bufVertices.put(blockVal);
+                        bufVertices.put((short)blockVal);
                         bufVertices.put(-2.0f);
 
                         indicesBuf.put(indiceNum);
@@ -188,38 +203,39 @@ public class Chunk {
                         numFloatsAdded += 20;
                     } */
 
-
                     //Top Tris
                     //If this is top of chunk or block above is nothing
-                    if (y == (CHUNK_HEIGHT - 1) && chunkBaron.getBlock(position[0] + x, position[1] + y+1, position[2] + z) == 0
-                            || y < CHUNK_HEIGHT - 1 && getBlock(x, y+1, z) == 0) {
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
+                    if (y < CHUNK_HEIGHT - 1 && getBlock(x, y+1, z) == 0
+                        || y == (CHUNK_HEIGHT - 1) && chunkBaron.getBlock(position[0] + x,
+                                                                          position[1] + y+1,
+                                                                          position[2] + z) == 0) {
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(2 + 32));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(2.0f);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(2 + 16));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(position[2] + z));
+                        bufVertices.put((short)2);
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(2.0f);
-
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(2.0f);
-
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(2.0f);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(2 + 48));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
                         indicesBuf.put(indiceNum); // 0
                         indiceNum++;
@@ -235,35 +251,37 @@ public class Chunk {
 
                     //Left Tris
                     //If this is left of chunk or block left is nothing
-                    if (x == 0 && chunkBaron.getBlock(position[0] + x - 1, position[1] + y, position[2] + z) == 0 ||
-                            x > 0 && this.getBlock(x-1, y, z) == 0) {
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z);
+                    if (x > 0 && this.getBlock(x-1, y, z) == 0
+                        || x == 0 && chunkBaron.getBlock(position[0] + x - 1,
+                                                         position[1] + y,
+                                                         position[2] + z) == 0) {
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(position[2] + z));
+                        bufVertices.put((short)(9 + 32));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(-1.0f);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(9 + 48));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(9 + 16));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(-1.0f);
-
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(-1.0f);
-
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(-1.0f);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(position[2] + z));
+                        bufVertices.put((short)(9));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
                         indicesBuf.put(indiceNum); // 0
                         indiceNum++;
@@ -279,35 +297,37 @@ public class Chunk {
 
                     //Right Tris
                     //If this is right of chunk or block right is nothing
-                    if (x == (CHUNK_WIDTH - 1) && chunkBaron.getBlock(position[0] + x + 1, position[1] + y, position[2] + z) == 0
-                            || x < CHUNK_WIDTH - 1 && this.getBlock(x+1, y, z) == 0) {
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
+                    if (x < CHUNK_WIDTH - 1 && this.getBlock(x+1, y, z) == 0
+                        || x == (CHUNK_WIDTH - 1) && chunkBaron.getBlock(position[0] + x + 1,
+                                                                         position[1] + y,
+                                                                         position[2] + z) == 0) {
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(1));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
+                        
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(1 + 32));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(1.0f);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(1 + 48));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(1.0f);
-
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(1.0f);
-
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(1.0f);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(1 + 16));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
                         indicesBuf.put(indiceNum);
                         indiceNum++;
@@ -323,35 +343,37 @@ public class Chunk {
 
                     //Back Tris
                     //If this is back of chunk or block behind is nothing
-                    if (z == 0  && chunkBaron.getBlock(position[0] + x, position[1] + y, position[2] + z - 1) == 0 ||
-                            z > 0 &&  this.getBlock(x, y, z-1) == 0) {
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z);
+                    if (z > 0 &&  this.getBlock(x, y, z-1) == 0
+                        || z == 0  && chunkBaron.getBlock(position[0] + x,
+                                                          position[1] + y,
+                                                          position[2] + z - 1) == 0) {
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(12));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(-3.0f);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(12 + 32));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(12 + 48));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(-3.0f);
-
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(-3.0f);
-
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(-3.0f);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(12 + 16));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
                         indicesBuf.put(indiceNum);
                         indiceNum++;
@@ -367,35 +389,37 @@ public class Chunk {
 
                     //Front Tris
                     //If this is front of chunk or block ahead is nothing
-                    if (z == (CHUNK_WIDTH - 1) && chunkBaron.getBlock(position[0] + x, position[1] + y, position[2] + z + 1) == 0 ||
-                            z < CHUNK_WIDTH - 1 &&  this.getBlock(x, y, z+1) == 0) {
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
+                    if (z < CHUNK_WIDTH - 1 &&  this.getBlock(x, y, z+1) == 0
+                        || z == (CHUNK_WIDTH - 1) && chunkBaron.getBlock(position[0] + x,
+                                                                         position[1] + y,
+                                                                         position[2] + z + 1) == 0) {
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(4 + 32));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(3.0f);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(4 + 48));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
+                        bufVertices.put((short)(position[0] + x + 1.0f));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(4 + 16));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
-                        bufVertices.put(blockVal);
-                        bufVertices.put(3.0f);
-
-                        bufVertices.put((float)this.position[0] + x + 1.0f);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(3.0f);
-
-                        bufVertices.put((float)this.position[0] + x);
-                        bufVertices.put((float)this.position[1] + y + 1.0f);
-                        bufVertices.put((float)this.position[2] + z + 1.0f);
-
-                        bufVertices.put(blockVal);
-                        bufVertices.put(3.0f);
+                        bufVertices.put((short)(position[0] + x));
+                        bufVertices.put((short)(position[1] + y + 1.0f));
+                        bufVertices.put((short)(position[2] + z + 1.0f));
+                        bufVertices.put((short)(4));
+                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)blockVal);
 
                         indicesBuf.put(indiceNum); // 0
                         indiceNum++;
@@ -408,8 +432,6 @@ public class Chunk {
                         indicesBuf.put(indiceNum - 3);
                         indiceNum++;
                     }
-
-
                 }
             }
         }
@@ -425,7 +447,7 @@ public class Chunk {
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
     }
 
-    public void render(ChunkManager cm) {
+    public void render(ChunkManager cm, int inPosition, int inBlockData) {
 
         if (hasChanged) {
             update(cm);
@@ -433,20 +455,16 @@ public class Chunk {
 
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, verticesVbo);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesVbo);
-        GL20.glEnableVertexAttribArray(0);
-        GL20.glEnableVertexAttribArray(1);
-        GL20.glEnableVertexAttribArray(2);
+        GL20.glEnableVertexAttribArray(inPosition);
+        GL20.glEnableVertexAttribArray(inBlockData);
 
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 20, 0);
-        GL20.glVertexAttribPointer(1, 1, GL11.GL_FLOAT, false, 20, 12);
-        GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, 20, 16);
+        GL20.glVertexAttribPointer(inPosition, 4, GL11.GL_SHORT, false, 12, 0);
+        GL20.glVertexAttribPointer(inBlockData, 2, GL11.GL_SHORT, false, 12, 8);
 
-        //GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numFloatsInVBO /7);
         GL11.glDrawElements(GL11.GL_TRIANGLES, numIndicesInVBO, GL11.GL_UNSIGNED_INT, 0);
 
-        GL20.glDisableVertexAttribArray(0);
-        GL20.glDisableVertexAttribArray(1);
-        GL20.glDisableVertexAttribArray(2);
+        GL20.glDisableVertexAttribArray(inBlockData);
+        GL20.glDisableVertexAttribArray(inPosition);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 

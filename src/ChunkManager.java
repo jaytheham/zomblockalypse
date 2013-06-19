@@ -24,6 +24,9 @@ public class ChunkManager {
     private int uniformTextureId;
     private int textureId;
 
+    private int inPosition;
+    private int inBlockData;
+
     private int uniformMatrixId;
 
     private int uniformLightPositionsId;
@@ -53,21 +56,21 @@ public class ChunkManager {
 
         // This shouldn't be here eventually
         lightPositions = BufferUtils.createFloatBuffer(8 * 3);
-        lightPositions.put(3.5f);
-        lightPositions.put(2.5f);
-        lightPositions.put(35.5f);
-
+        lightPositions.put(0.5f);
+        lightPositions.put(12.5f);
         lightPositions.put(5.5f);
-        lightPositions.put(2.5f);
-        lightPositions.put(-17.5f);
 
-        lightPositions.put(47.5f);
-        lightPositions.put(2.5f);
-        lightPositions.put(1.5f);
+        lightPositions.put(15.5f);
+        lightPositions.put(12.5f);
+        lightPositions.put(5.5f);
 
-        lightPositions.put(9.5f);
-        lightPositions.put(2.5f);
-        lightPositions.put(25.5f);
+        lightPositions.put(-15.5f);
+        lightPositions.put(12.5f);
+        lightPositions.put(5.5f);
+
+        lightPositions.put(0.5f);
+        lightPositions.put(10.5f);
+        lightPositions.put(-15.5f);
 
         lightPositions.flip();
 
@@ -75,11 +78,11 @@ public class ChunkManager {
         lightColors.put(1.0f);
         lightColors.put(1.0f);
         lightColors.put(1.0f);
-        lightColors.put(25.0f);
+        lightColors.put(30.0f);
 
         lightColors.put(1.0f);
-        lightColors.put(0.99f);
-        lightColors.put(0.97f);
+        lightColors.put(0.0f);
+        lightColors.put(0.0f);
         lightColors.put(25.0f);
 
         lightColors.put(0.0f);
@@ -87,10 +90,10 @@ public class ChunkManager {
         lightColors.put(1.0f);
         lightColors.put(25.0f);
 
+        lightColors.put(0.0f);
         lightColors.put(1.0f);
-        lightColors.put(0.99f);
-        lightColors.put(0.96f);
-        lightColors.put(200.0f);
+        lightColors.put(0.0f);
+        lightColors.put(25.0f);
 
         lightColors.flip();
     }
@@ -310,18 +313,37 @@ public class ChunkManager {
             return;
 
         // If setting a boundary block update the blocks it touches
-        if (x == 0)
-            getChunkAtWorldCoords(x - 1, y, z).invalidate();
-        else if (x == Chunk.CHUNK_WIDTH - 1)
-            getChunkAtWorldCoords(x + 1, y, z).invalidate();
-        if (y == 0)
-            getChunkAtWorldCoords(x, y - 1, z).invalidate();
-        else if (y == Chunk.CHUNK_HEIGHT - 1)
-            getChunkAtWorldCoords(x, y + 1, z).invalidate();
-        if (z == 0)
-            getChunkAtWorldCoords(x, y, z - 1).invalidate();
-        else if (z == Chunk.CHUNK_WIDTH - 1)
-            getChunkAtWorldCoords(x, y, z + 1).invalidate();
+        Chunk c2;
+        if (x == 0) {
+            c2 = getChunkAtWorldCoords(x - 1, y, z);
+            if (c2 != null)
+                c2.invalidate();
+        }
+        else if (x == Chunk.CHUNK_WIDTH - 1) {
+            c2 = getChunkAtWorldCoords(x + 1, y, z);
+            if (c2 != null)
+                c2.invalidate();
+        }
+        if (y == 0) {
+            c2 = getChunkAtWorldCoords(x, y - 1, z);
+            if (c2 != null)
+                c2.invalidate();
+        }
+        else if (y == Chunk.CHUNK_HEIGHT - 1) {
+            c2 = getChunkAtWorldCoords(x, y + 1, z);
+            if (c2 != null)
+                c2.invalidate();
+            }
+        if (z == 0) {
+            c2 = getChunkAtWorldCoords(x, y, z - 1);
+            if (c2 != null)
+                c2.invalidate();
+        }
+        else if (z == Chunk.CHUNK_WIDTH - 1) {
+            c2 = getChunkAtWorldCoords(x, y, z + 1);
+            if (c2 != null)
+                c2.invalidate();
+        }
 
         x %= Chunk.CHUNK_WIDTH;
         y %= Chunk.CHUNK_HEIGHT;
@@ -409,11 +431,10 @@ public class ChunkManager {
         GL20.glAttachShader(programId, vsId);
         GL20.glAttachShader(programId, fsId);
 
-        GL20.glBindAttribLocation(programId, 0, "in_Position");
-        GL20.glBindAttribLocation(programId, 1, "in_BlockType");
-        GL20.glBindAttribLocation(programId, 2, "in_VertNormal");
-
         GL20.glLinkProgram(programId);
+
+        inPosition = GL20.glGetAttribLocation(programId, "in_Position");
+        inBlockData = GL20.glGetAttribLocation(programId, "in_BlockType");
 
         int status = GL20.glGetShaderi(programId, GL20.GL_LINK_STATUS);
         if (status == GL11.GL_FALSE) {
@@ -474,7 +495,7 @@ public class ChunkManager {
                 cPosv.set(cPos[0], cPos[1], cPos[2]);
                 Vector3f.sub(cPosv, camPosition, cPosv);
                 if (Math.toDegrees(Vector3f.angle(cPosv, camDirection)) > 120.0f) {
-                    c.render(this);
+                    c.render(this, inPosition, inBlockData);
                 }
             }
         }

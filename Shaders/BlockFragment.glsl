@@ -2,52 +2,13 @@
 
 in vec3 pass_WorldPosition;
 in vec3 pass_Normal;
-in float pass_BlockType;
+in vec2 textureCoords;
 
 uniform vec3 uLightPositions[8];
 uniform vec4 uLightColors[8];
 uniform sampler2D uTexture;
 
 void main(void) {
-
-    // Calculating tex coords
-    //--
-    const float TEX_ATLAS_WIDTH = 20.0f;
-
-    vec2 textureCoords;
-
-    if (pass_Normal.y != 0.0f) {
-        textureCoords.x = mod(pass_WorldPosition.x, 1.0f);
-        textureCoords.y = mod(pass_WorldPosition.z, 1.0f);
-    }
-    else {
-        textureCoords.x = mod(pass_WorldPosition.x + pass_WorldPosition.z, 1.0f);
-        textureCoords.y = mod(pass_WorldPosition.y, 1.0f);
-        textureCoords.y = 1.0f - textureCoords.y;
-    }
-
-    if (textureCoords.x < 0.02f) {
-        textureCoords.x = 0.02f;
-    }
-    else if (textureCoords.x > 0.98f) {
-        textureCoords.x = 0.98f;
-    }
-
-    if (textureCoords.y < 0.02f) {
-            textureCoords.y = 0.02f;
-    }
-    else if (textureCoords.y > 0.98f) {
-        textureCoords.y = 0.98f;
-    }
-
-    textureCoords.x += pass_BlockType;
-    while (textureCoords.x >= TEX_ATLAS_WIDTH) {
-        textureCoords.x -= TEX_ATLAS_WIDTH;
-        textureCoords.y += 1.0f;
-    }
-    textureCoords.x /= TEX_ATLAS_WIDTH;
-    textureCoords.y /= TEX_ATLAS_WIDTH;
-    //-
 
     int i = 0;
     vec3 finalLighting = vec3(0.0f, 0.0f, 0.0f);
@@ -85,5 +46,6 @@ void main(void) {
 
     gl_FragColor = vec4((finalLighting.r * textureColor.r),
                         (finalLighting.g * textureColor.g),
-                        (finalLighting.b * textureColor.b),1.0f);
+                        (finalLighting.b * textureColor.b),
+                         1.0f);
 }
