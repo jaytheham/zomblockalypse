@@ -7,9 +7,14 @@ uniform mat4 transformMatrix;
 
 out vec3 pass_WorldPosition;
 out vec3 pass_Normal;
-out vec2 textureCoords;
+out vec2 pass_TextureCoords;
+out vec3 pass_AmbientOcclusion;
 
 void main(void) {
+
+    pass_AmbientOcclusion = vec3(1 - in_BlockType.y / 8,
+                                 1 - in_BlockType.y / 8,
+                                 1 - in_BlockType.y / 8);
 
     // Calculating tex coords
     //
@@ -17,39 +22,36 @@ void main(void) {
     int checker = int(in_Position.w);
 
     if (checker & 16) {
-        textureCoords.x = 0.98f;
+        pass_TextureCoords.x = 0.98f;
     }
     else {
-        textureCoords.x = 0.02f;
+        pass_TextureCoords.x = 0.02f;
     }
 
     if (checker & 32) {
-        textureCoords.y = 0.98f;
+        pass_TextureCoords.y = 0.98f;
     }
     else {
-        textureCoords.y = 0.02f;
+        pass_TextureCoords.y = 0.02f;
     }
 
-    textureCoords.x += in_BlockType.x;
-    while (textureCoords.x >= TEX_ATLAS_WIDTH) {
-        textureCoords.x -= TEX_ATLAS_WIDTH;
-        textureCoords.y += 1.0f;
+    pass_TextureCoords.x += in_BlockType.x;
+    while (pass_TextureCoords.x >= TEX_ATLAS_WIDTH) {
+        pass_TextureCoords.x -= TEX_ATLAS_WIDTH;
+        pass_TextureCoords.y += 1.0f;
     }
-    textureCoords.x /= TEX_ATLAS_WIDTH;
-    textureCoords.y /= TEX_ATLAS_WIDTH;
+    pass_TextureCoords.x /= TEX_ATLAS_WIDTH;
+    pass_TextureCoords.y /= TEX_ATLAS_WIDTH;
 
 
     // Calculate normal
     //
-    vec3 normal;
-    normal.x = (checker & 1);
-    normal.y = (checker & 2) / 2;
-    normal.z = (checker & 4) / 4;
+    pass_Normal.x = (checker & 1);
+    pass_Normal.y = (checker & 2) / 2;
+    pass_Normal.z = (checker & 4) / 4;
     if (checker & 8) {
-        normal *= -1;
+        pass_Normal *= -1;
     }
-
-    pass_Normal = normal;
 
     pass_WorldPosition = in_Position.xyz;
 

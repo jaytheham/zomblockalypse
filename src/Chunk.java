@@ -1,7 +1,7 @@
+import Entities.GameEntity;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ public class Chunk {
     private boolean isLoaded;
     private boolean objectsAreLoaded;
 
-    private ArrayList<GameObject> objectList;
+    private ArrayList<GameEntity> objectList;
 
     /**
      * Looking at the chunk from above
@@ -42,7 +42,7 @@ public class Chunk {
         hasChanged = true;
         unsavedChanges = false;
         isLoaded = false;
-        objectList = new ArrayList<GameObject>();
+        objectList = new ArrayList<GameEntity>();
         objectsAreLoaded = false;
     }
 
@@ -67,11 +67,11 @@ public class Chunk {
         objectsAreLoaded = true;
     }
 
-    public void attachGameObject(GameObject o) {
+    public void attachGameObject(GameEntity o) {
         objectList.add(o);
     }
 
-    public ArrayList<GameObject> getGameObjects() {
+    public ArrayList<GameEntity> getGameObjects() {
         if (objectsAreLoaded)
             return objectList;
         else
@@ -93,6 +93,24 @@ public class Chunk {
         return blocks[ x +
                       (y * CHUNK_WIDTH * CHUNK_WIDTH) +
                       (z * CHUNK_WIDTH)];
+    }
+
+    /**
+     * Get whether a block is opaque.
+     * Will need to change? when transparent blocks exist
+     * @param x X Position in the block
+     * @param y Y Position in the block
+     * @param z Z Position in the block
+     * @return 1 if a block is opaque, 0 if not
+     */
+    private int isBlockOpaque(int x, int y, int z) {
+        if (x >= 0 && x < CHUNK_WIDTH &&
+                z >= 0 && z < CHUNK_WIDTH &&
+                y >= 0 && y < CHUNK_HEIGHT &&
+                blocks[ x +
+                (y * CHUNK_WIDTH * CHUNK_WIDTH) +
+                (z * CHUNK_WIDTH)] > 0) return 2;
+        return 0;
     }
 
     public int getBlock(int i) {
@@ -140,6 +158,8 @@ public class Chunk {
 
         int indiceNum = 0;
         int blockVal;
+
+        int pN, nX, pX, nZ, pZ, pXpZ, pXnZ, nXpZ, nXnZ;
 
         for (int x = 0; x < CHUNK_WIDTH; x++) {
             for (int y = 0; y < CHUNK_HEIGHT; y++) {
@@ -209,44 +229,65 @@ public class Chunk {
                         || y == (CHUNK_HEIGHT - 1) && chunkBaron.getBlock(position[0] + x,
                                                                           position[1] + y+1,
                                                                           position[2] + z) == 0) {
+                        pX = isBlockOpaque(x + 1, y + 1, z);
+                        pZ = isBlockOpaque(x, y + 1, z + 1);
+                        nX = isBlockOpaque(x - 1, y + 1, z);
+                        nZ = isBlockOpaque(x, y + 1, z - 1);
+                        pXpZ = isBlockOpaque(x + 1, y + 1, z + 1);
+                        pXnZ = isBlockOpaque(x + 1, y + 1, z - 1);
+                        nXpZ = isBlockOpaque(x - 1, y + 1, z + 1);
+                        nXnZ = isBlockOpaque(x - 1, y + 1, z - 1);
+
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(2 + 32));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nX + pZ, nXpZ));
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y + 1.0f));
-                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(2 + 16));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nZ + pX, pXnZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)2);
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nZ + nX, nXnZ));
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(2 + 48));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + pX, pXpZ));
 
-                        indicesBuf.put(indiceNum); // 0
-                        indiceNum++;
-                        indicesBuf.put(indiceNum); // 1
-                        indiceNum++;
-                        indicesBuf.put(indiceNum); // 2
-                        indicesBuf.put(indiceNum - 1); // 1
-                        indicesBuf.put(indiceNum - 2); // 0
-                        indiceNum++;
-                        indicesBuf.put(indiceNum); // 3
-                        indiceNum++;
+                        if (Math.abs(Math.max(nZ + pX, pXnZ) - Math.max(nX + pZ, nXpZ))
+                                < Math.abs(Math.max(pZ + pX, pXpZ) - Math.max(nZ + nX, nXnZ))) {
+                            indicesBuf.put(indiceNum); // 0
+                            indiceNum++;
+                            indicesBuf.put(indiceNum); // 1
+                            indiceNum++;
+                            indicesBuf.put(indiceNum); // 2
+                            indicesBuf.put(indiceNum - 1); // 1
+                            indicesBuf.put(indiceNum - 2); // 0
+                            indiceNum++;
+                            indicesBuf.put(indiceNum); // 3
+                            indiceNum++;
+                        }
+                        else {
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum + 3);
+                            indicesBuf.put(indiceNum + 2);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum++);
+                        }
                     }
 
                     //Left Tris
@@ -255,44 +296,67 @@ public class Chunk {
                         || x == 0 && chunkBaron.getBlock(position[0] + x - 1,
                                                          position[1] + y,
                                                          position[2] + z) == 0) {
+                        pX = isBlockOpaque(x - 1, y + 1, z);
+                        pZ = isBlockOpaque(x - 1, y, z + 1);
+                        nX = isBlockOpaque(x - 1, y - 1, z);
+                        nZ = isBlockOpaque(x - 1, y, z - 1);
+                        pXpZ = isBlockOpaque(x - 1, y + 1, z + 1);
+                        pXnZ = isBlockOpaque(x - 1, y + 1, z - 1);
+                        nXpZ = isBlockOpaque(x - 1, y - 1, z + 1);
+                        nXnZ = isBlockOpaque(x - 1, y - 1, z - 1);
+
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y));
                         bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(9 + 32));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nX + nZ, nXnZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(9 + 48));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + nX, nXpZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(9 + 16));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + pX, pXpZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(9));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nZ + pX, pXnZ));
 
-                        indicesBuf.put(indiceNum); // 0
-                        indiceNum++;
-                        indicesBuf.put(indiceNum); // 1
-                        indiceNum++;
-                        indicesBuf.put(indiceNum); // 2
-                        indicesBuf.put(indiceNum);
-                        indiceNum++;
-                        indicesBuf.put(indiceNum);
-                        indicesBuf.put(indiceNum - 3);
-                        indiceNum++;
+                        if (Math.abs(Math.max(nX + pZ, nXpZ) - Math.max(nZ + pX, pXnZ))
+                                > Math.abs(Math.max(pZ + pX, pXpZ) - Math.max(nZ + nX, nXnZ))) {
+                            indicesBuf.put(indiceNum); // 0
+                            indiceNum++;
+                            indicesBuf.put(indiceNum); // 1
+                            indiceNum++;
+                            indicesBuf.put(indiceNum); // 2
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum - 3);
+                            indiceNum++;
+                        }
+                        else {
+                            indiceNum++;
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum);
+
+                            indicesBuf.put(indiceNum - 3);
+                            indicesBuf.put(indiceNum - 2);
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                        }
                     }
 
                     //Right Tris
@@ -301,44 +365,68 @@ public class Chunk {
                         || x == (CHUNK_WIDTH - 1) && chunkBaron.getBlock(position[0] + x + 1,
                                                                          position[1] + y,
                                                                          position[2] + z) == 0) {
+                        pX = isBlockOpaque(x + 1, y + 1, z);
+                        pZ = isBlockOpaque(x + 1, y, z + 1);
+                        nX = isBlockOpaque(x + 1, y - 1, z);
+                        nZ = isBlockOpaque(x + 1, y, z - 1);
+                        pXpZ = isBlockOpaque(x + 1, y + 1, z + 1);
+                        pXnZ = isBlockOpaque(x + 1, y + 1, z - 1);
+                        nXpZ = isBlockOpaque(x + 1, y - 1, z + 1);
+                        nXnZ = isBlockOpaque(x + 1, y - 1, z - 1);
+                        int pY = isBlockOpaque(x, y + 1, z);
+
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(1));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + pX, pXpZ));
                         
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(1 + 32));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + nX, nXpZ));
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y));
-                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(1 + 48));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nX + nZ, nXnZ));
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y + 1.0f));
-                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(1 + 16));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nZ + pX, pXnZ));
 
-                        indicesBuf.put(indiceNum);
-                        indiceNum++;
-                        indicesBuf.put(indiceNum);
-                        indiceNum++;
-                        indicesBuf.put(indiceNum);
-                        indicesBuf.put(indiceNum);
-                        indiceNum++;
-                        indicesBuf.put(indiceNum);
-                        indicesBuf.put(indiceNum - 3);
-                        indiceNum++;
+                        if (Math.abs(Math.max(nX + pZ, nXpZ) - Math.max(nZ + pX, pXnZ))
+                                > Math.abs(Math.max(pZ + pX, pXpZ) - Math.max(nZ + nX, nXnZ))) {
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum - 3);
+                            indiceNum++;
+                        }
+                        else {
+                            indiceNum++;
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum);
+
+                            indicesBuf.put(indiceNum - 3);
+                            indicesBuf.put(indiceNum - 2);
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                        }
                     }
 
                     //Back Tris
@@ -347,44 +435,68 @@ public class Chunk {
                         || z == 0  && chunkBaron.getBlock(position[0] + x,
                                                           position[1] + y,
                                                           position[2] + z - 1) == 0) {
+
+                        pX = isBlockOpaque(x + 1, y, z - 1);
+                        pZ = isBlockOpaque(x, y + 1, z - 1);
+                        nX = isBlockOpaque(x - 1, y, z - 1);
+                        nZ = isBlockOpaque(x, y - 1, z - 1);
+                        pXpZ = isBlockOpaque(x + 1, y + 1, z - 1);
+                        pXnZ = isBlockOpaque(x + 1, y - 1, z - 1);
+                        nXpZ = isBlockOpaque(x - 1, y + 1, z - 1);
+                        nXnZ = isBlockOpaque(x - 1, y - 1, z - 1);
+
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(this.position[2] + z));
                         bufVertices.put((short)(12));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + pX, pXpZ));
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y));
                         bufVertices.put((short)(this.position[2] + z));
                         bufVertices.put((short)(12 + 32));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nZ + pX, pXnZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y));
                         bufVertices.put((short)(this.position[2] + z));
                         bufVertices.put((short)(12 + 48));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nZ + nX, nXnZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(this.position[2] + z));
                         bufVertices.put((short)(12 + 16));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + nX, nXpZ));
 
-                        indicesBuf.put(indiceNum);
-                        indiceNum++;
-                        indicesBuf.put(indiceNum);
-                        indiceNum++;
-                        indicesBuf.put(indiceNum);
-                        indicesBuf.put(indiceNum);
-                        indiceNum++;
-                        indicesBuf.put(indiceNum);
-                        indicesBuf.put(indiceNum - 3);
-                        indiceNum++;
+                        if (Math.abs(Math.max(nX + pZ, nXpZ) - Math.max(nZ + pX, pXnZ))
+                                > Math.abs(Math.max(pZ + pX, pXpZ) - Math.max(nZ + nX, nXnZ))) {
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum - 3);
+                            indiceNum++;
+                        }
+                        else {
+                            indiceNum++;
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum);
+
+                            indicesBuf.put(indiceNum - 2);
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum - 3);
+                            indiceNum++;
+                        }
                     }
 
                     //Front Tris
@@ -393,44 +505,68 @@ public class Chunk {
                         || z == (CHUNK_WIDTH - 1) && chunkBaron.getBlock(position[0] + x,
                                                                          position[1] + y,
                                                                          position[2] + z + 1) == 0) {
+                        pX = isBlockOpaque(x + 1, y, z + 1);
+                        pZ = isBlockOpaque(x, y + 1, z + 1);
+                        nX = isBlockOpaque(x - 1, y, z + 1);
+                        nZ = isBlockOpaque(x, y - 1, z + 1);
+                        pXpZ = isBlockOpaque(x + 1, y + 1, z + 1);
+                        pXnZ = isBlockOpaque(x + 1, y - 1, z + 1);
+                        nXpZ = isBlockOpaque(x - 1, y + 1, z + 1);
+                        nXnZ = isBlockOpaque(x - 1, y - 1, z + 1);
+
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(4 + 32));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nZ + nX, nXnZ));
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(4 + 48));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(nZ + pX, pXnZ));
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(4 + 16));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + pX, pXpZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y + 1.0f));
                         bufVertices.put((short)(position[2] + z + 1.0f));
                         bufVertices.put((short)(4));
                         bufVertices.put((short)blockVal);
-                        bufVertices.put((short)blockVal);
+                        bufVertices.put((short)Math.max(pZ + nX, nXpZ));
 
-                        indicesBuf.put(indiceNum); // 0
-                        indiceNum++;
-                        indicesBuf.put(indiceNum); // 1
-                        indiceNum++;
-                        indicesBuf.put(indiceNum); // 2
-                        indicesBuf.put(indiceNum);
-                        indiceNum++;
-                        indicesBuf.put(indiceNum);
-                        indicesBuf.put(indiceNum - 3);
-                        indiceNum++;
+
+                        if (Math.abs(Math.max(nX + pZ, nXpZ) - Math.max(nZ + pX, pXnZ))
+                                > Math.abs(Math.max(pZ + pX, pXpZ) - Math.max(nZ + nX, nXnZ))) {
+                            indicesBuf.put(indiceNum); // 0
+                            indiceNum++;
+                            indicesBuf.put(indiceNum); // 1
+                            indiceNum++;
+                            indicesBuf.put(indiceNum); // 2
+                            indicesBuf.put(indiceNum);
+                            indiceNum++;
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum - 3);
+                            indiceNum++;
+                        }
+                        else {
+                            indiceNum++;
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum++);
+                            indicesBuf.put(indiceNum);
+
+                            indicesBuf.put(indiceNum - 2);
+                            indicesBuf.put(indiceNum);
+                            indicesBuf.put(indiceNum - 3);
+                            indiceNum++;
+                        }
                     }
                 }
             }

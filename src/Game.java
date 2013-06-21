@@ -1,4 +1,4 @@
-import Utils.*;
+import Utilities.*;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -173,7 +173,7 @@ public class Game {
         GL20.glDetachShader(pId, fsId);
     }
 
-    
+
     /**
      * Get the time in milliseconds
      * @return The system time in milliseconds

@@ -1,9 +1,8 @@
-package Utils;
+package Utilities;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 public class Text {
@@ -23,7 +22,7 @@ public class Text {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
-        Utils.TextureLoader.loadPNG(filepath, GL11.GL_RGB);
+        Utilities.TextureLoader.loadPNG(filepath, GL11.GL_RGB);
     }
 
     /**

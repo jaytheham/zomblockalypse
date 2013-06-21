@@ -1,5 +1,5 @@
-import Utils.ShaderUtils;
-import Utils.Vector3i;
+import Utilities.ShaderUtils;
+import Utilities.Vector3i;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
@@ -34,6 +34,8 @@ public class ChunkManager {
     private FloatBuffer lightPositions;
     private FloatBuffer lightColors;
 
+    private EntityManager entityBaron;
+
 
 
     protected ChunkManager(Player newPlayer) {
@@ -54,45 +56,31 @@ public class ChunkManager {
 
         updateNullChunks(CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH);
 
+        entityBaron = new EntityManager(CHUNKS_WIDE, CHUNKS_HIGH);
+
         // This shouldn't be here eventually
+
         lightPositions = BufferUtils.createFloatBuffer(8 * 3);
-        lightPositions.put(0.5f);
-        lightPositions.put(12.5f);
+
+        lightPositions.put(-10.0f);
+        lightPositions.put(5.5f);
         lightPositions.put(5.5f);
 
-        lightPositions.put(15.5f);
-        lightPositions.put(12.5f);
+        lightPositions.put(10.0f);
         lightPositions.put(5.5f);
-
-        lightPositions.put(-15.5f);
-        lightPositions.put(12.5f);
         lightPositions.put(5.5f);
-
-        lightPositions.put(0.5f);
-        lightPositions.put(10.5f);
-        lightPositions.put(-15.5f);
 
         lightPositions.flip();
 
-        lightColors = BufferUtils.createFloatBuffer(8 * 4);
+        lightColors = BufferUtils.createFloatBuffer(8 * 3);
         lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(1.0f);
-        lightColors.put(30.0f);
-
-        lightColors.put(1.0f);
-        lightColors.put(0.0f);
+        lightColors.put(0.5f);
         lightColors.put(0.0f);
         lightColors.put(25.0f);
 
         lightColors.put(0.0f);
-        lightColors.put(0.0f);
+        lightColors.put(0.5f);
         lightColors.put(1.0f);
-        lightColors.put(25.0f);
-
-        lightColors.put(0.0f);
-        lightColors.put(1.0f);
-        lightColors.put(0.0f);
         lightColors.put(25.0f);
 
         lightColors.flip();
@@ -314,32 +302,32 @@ public class ChunkManager {
 
         // If setting a boundary block update the blocks it touches
         Chunk c2;
-        if (x == 0) {
+        if (x % Chunk.CHUNK_WIDTH == 0) {
             c2 = getChunkAtWorldCoords(x - 1, y, z);
             if (c2 != null)
                 c2.invalidate();
         }
-        else if (x == Chunk.CHUNK_WIDTH - 1) {
+        else if (x == Chunk.CHUNK_WIDTH - 1 || x % Chunk.CHUNK_WIDTH == -1) {
             c2 = getChunkAtWorldCoords(x + 1, y, z);
             if (c2 != null)
                 c2.invalidate();
         }
-        if (y == 0) {
+        if (y % Chunk.CHUNK_HEIGHT == 0) {
             c2 = getChunkAtWorldCoords(x, y - 1, z);
             if (c2 != null)
                 c2.invalidate();
         }
-        else if (y == Chunk.CHUNK_HEIGHT - 1) {
+        else if (y == Chunk.CHUNK_HEIGHT - 1 || y % Chunk.CHUNK_HEIGHT == -1) {
             c2 = getChunkAtWorldCoords(x, y + 1, z);
             if (c2 != null)
                 c2.invalidate();
             }
-        if (z == 0) {
+        if (z % Chunk.CHUNK_WIDTH == 0) {
             c2 = getChunkAtWorldCoords(x, y, z - 1);
             if (c2 != null)
                 c2.invalidate();
         }
-        else if (z == Chunk.CHUNK_WIDTH - 1) {
+        else if (z == Chunk.CHUNK_WIDTH - 1 || z % Chunk.CHUNK_WIDTH == -1) {
             c2 = getChunkAtWorldCoords(x, y, z + 1);
             if (c2 != null)
                 c2.invalidate();
@@ -460,7 +448,7 @@ public class ChunkManager {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
-        Utils.TextureLoader.loadPNG("res/block_textures.png", GL11.GL_RGB);
+        Utilities.TextureLoader.loadPNG("res/block_textures.png", GL11.GL_RGB);
 
 
         // Unbind stuff?

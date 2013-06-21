@@ -1,4 +1,4 @@
-package Utils;
+package Utilities;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;

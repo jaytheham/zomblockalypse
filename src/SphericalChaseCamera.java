@@ -1,5 +1,5 @@
-import Utils.Constants;
-import Utils.Settings;
+import Utilities.Constants;
+import Utilities.Settings;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;

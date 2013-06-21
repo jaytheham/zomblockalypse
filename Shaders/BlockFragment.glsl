@@ -2,7 +2,8 @@
 
 in vec3 pass_WorldPosition;
 in vec3 pass_Normal;
-in vec2 textureCoords;
+in vec2 pass_TextureCoords;
+in vec3 pass_AmbientOcclusion;
 
 uniform vec3 uLightPositions[8];
 uniform vec4 uLightColors[8];
@@ -37,15 +38,15 @@ void main(void) {
         i += 1;
     }
 
-    vec4 textureColor = texture2D(uTexture, textureCoords);
+    vec4 textureColor = texture2D(uTexture, pass_TextureCoords);
 
-    // Set ambient level
+    // Set a minimum light level
     if (finalLighting.r < 0.05) finalLighting.r = 0.05f;
     if (finalLighting.g < 0.05) finalLighting.g = 0.05f;
     if (finalLighting.b < 0.05) finalLighting.b = 0.05f;
 
-    gl_FragColor = vec4((finalLighting.r * textureColor.r),
-                        (finalLighting.g * textureColor.g),
-                        (finalLighting.b * textureColor.b),
+    gl_FragColor = vec4((finalLighting.r * textureColor.r) * pass_AmbientOcclusion.r,
+                        (finalLighting.g * textureColor.g) * pass_AmbientOcclusion.g,
+                        (finalLighting.b * textureColor.b) * pass_AmbientOcclusion.b,
                          1.0f);
 }
