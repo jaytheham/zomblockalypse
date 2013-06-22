@@ -1,3 +1,4 @@
+import Utilities.Constants;
 import Utilities.ShaderUtils;
 import Utilities.Vector3i;
 import org.lwjgl.BufferUtils;
@@ -31,8 +32,6 @@ public class ChunkManager {
 
     private int uniformLightPositionsId;
     private int uniformLightColorsId;
-    private FloatBuffer lightPositions;
-    private FloatBuffer lightColors;
 
     private EntityManager entityBaron;
 
@@ -56,34 +55,11 @@ public class ChunkManager {
 
         updateNullChunks(CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH);
 
-        entityBaron = new EntityManager(CHUNKS_WIDE, CHUNKS_HIGH);
-
-        // This shouldn't be here eventually
-
-        lightPositions = BufferUtils.createFloatBuffer(8 * 3);
-
-        lightPositions.put(-10.0f);
-        lightPositions.put(5.5f);
-        lightPositions.put(5.5f);
-
-        lightPositions.put(10.0f);
-        lightPositions.put(5.5f);
-        lightPositions.put(5.5f);
-
-        lightPositions.flip();
-
-        lightColors = BufferUtils.createFloatBuffer(8 * 3);
-        lightColors.put(1.0f);
-        lightColors.put(0.5f);
-        lightColors.put(0.0f);
-        lightColors.put(25.0f);
-
-        lightColors.put(0.0f);
-        lightColors.put(0.5f);
-        lightColors.put(1.0f);
-        lightColors.put(25.0f);
-
-        lightColors.flip();
+        entityBaron = new EntityManager(CHUNKS_WIDE,
+                CHUNKS_HIGH,
+                activeChunksCenterCenter.x - Chunk.CHUNK_WIDTH / 2,
+                activeChunksCenterCenter.y - Chunk.CHUNK_HEIGHT / 2,
+                activeChunksCenterCenter.z - Chunk.CHUNK_WIDTH / 2);
     }
 
     public static ChunkManager getInstance(Player player) {
@@ -118,6 +94,11 @@ public class ChunkManager {
                     (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
             activeChunksCenterCenter.z = Chunk.CHUNK_WIDTH *
                     (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
+
+            entityBaron.centerChanged(
+                    activeChunksCenterCenter.x - Chunk.CHUNK_WIDTH / 2,
+                    activeChunksCenterCenter.y - Chunk.CHUNK_HEIGHT / 2,
+                    activeChunksCenterCenter.z - Chunk.CHUNK_WIDTH / 2);
 
             xChange = (int)(xC * 2);
             yChange = (int)(yC * 2);
@@ -458,6 +439,7 @@ public class ChunkManager {
     public void render(Matrix4f perspectiveMatrix, Vector3f camPosition, Vector3f camDirection) {
 
         FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
+        FloatBuffer lights = entityBaron.getLights(player.getPosition());
         perspectiveMatrix.store(matrixBuffer);
         matrixBuffer.flip();
 
@@ -468,8 +450,11 @@ public class ChunkManager {
         GL20.glUniform1i(uniformTextureId, 0);
 
         GL20.glUniformMatrix4(uniformMatrixId, false, matrixBuffer);
-        GL20.glUniform3(uniformLightPositionsId, lightPositions);
-        GL20.glUniform4(uniformLightColorsId, lightColors);
+        lights.limit(Constants.MAX_NUM_LIGHTS * 3);
+        GL20.glUniform3(uniformLightPositionsId, lights);
+        lights.position(Constants.MAX_NUM_LIGHTS * 3);
+        lights.limit(lights.capacity());
+        GL20.glUniform4(uniformLightColorsId, lights);
 
         int[] cPos;
         Vector3f cPosv = new Vector3f();
@@ -489,5 +474,9 @@ public class ChunkManager {
         }
 
         GL20.glUseProgram(0);
+    }
+
+    public void close() {
+        entityBaron.closeDatabase();
     }
 }

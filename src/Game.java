@@ -145,6 +145,7 @@ public class Game {
         // Should clear buffers and textures off the GPU here
         ChunkLoader.close();
         ChunkSaver.close();
+        chunkBaron.close();
         Display.destroy();
     }
 

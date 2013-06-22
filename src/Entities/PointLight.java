@@ -23,6 +23,14 @@ public class PointLight extends GameEntity implements Serializable {
         intensity = i;
     }
 
+    public Vector3f getColor() {
+        return color;
+    }
+
+    public float getIntensity() {
+        return intensity;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

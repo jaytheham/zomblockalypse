@@ -20,9 +20,9 @@ public class Text {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
-        Utilities.TextureLoader.loadPNG(filepath, GL11.GL_RGB);
+        Utilities.TextureLoader.loadPNG(filepath, GL11.GL_RGBA);
     }
 
     /**
@@ -36,7 +36,7 @@ public class Text {
 
         x = (x - 50.0f) / 50.0f;
         y = (y - 50.0f) / 50.0f;
-        float charSize = 36.0f / Display.getHeight();
+        float charSize = 30.0f / Display.getHeight();
         float charWidth = charSize / 2;
 
         char c = ' ';

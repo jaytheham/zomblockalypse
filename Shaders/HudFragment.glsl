@@ -6,7 +6,10 @@ uniform sampler2D uTexture;
 
 void main(void) {
 
-    gl_FragColor = texture2D(uTexture, pass_TexCoord);
-    //gl_FragColor = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+    vec4 color = texture2D(uTexture, pass_TexCoord);
+    if (color.a < 0.5f) {
+        discard;
+    }
+    gl_FragColor = color;
 
 }
