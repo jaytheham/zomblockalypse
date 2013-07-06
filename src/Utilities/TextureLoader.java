@@ -2,6 +2,8 @@ package Utilities;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL15;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,7 +32,7 @@ public class TextureLoader {
                 // Decode the PNG file in a ByteBuffer
                 buf = ByteBuffer.allocateDirect(
                         4 * decoder.getWidth() * decoder.getHeight());
-                decoder.decode(buf, decoder.getWidth() * 4, PNGDecoder.Format.RGBA);
+                decoder.decode(buf, decoder.getWidth() * 4, PNGDecoder.Format.BGRA);
                 buf.flip();
 
                 in.close();
@@ -42,6 +44,6 @@ public class TextureLoader {
             GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
 
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, format, tWidth, tHeight, 0,
-                    GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
+                    GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buf);
         }
 }

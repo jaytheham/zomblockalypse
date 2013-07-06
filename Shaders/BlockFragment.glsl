@@ -38,7 +38,7 @@ void main(void) {
         i += 1;
     }
 
-    vec4 textureColor = texture2D(uTexture, pass_TextureCoords);
+    vec4 textureColor = texture2D(uTexture, pass_TextureCoords, -0.75);
 
     // Set a minimum light level
     if (finalLighting.r < 0.05) finalLighting.r = 0.05f;

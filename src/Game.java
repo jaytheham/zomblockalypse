@@ -1,4 +1,5 @@
 import Utilities.*;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -8,10 +9,11 @@ import org.lwjgl.Sys;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+
 public class Game {
 
-    private int transformMatrixId;
-    private int pId = 0;
     private int mouseLastX = 0;
     private int mouseLastY = 0;
 
@@ -54,8 +56,7 @@ public class Game {
         // Wireframe
         //GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 
-        ShaderProgram ShaderPrograms = new ShaderProgram();
-        setupDefaultShaders("Shaders/DefaultVertex.glsl", "Shaders/DefaultFragment.glsl");
+        ShaderProgram shaders = new ShaderProgram();
         setupPerspectiveMatrix();
 
         Player playerOne = new Player();
@@ -133,9 +134,9 @@ public class Game {
 
             Matrix4f.mul(projectionMatrix, camera.getMatrix(), camXprjMatrix);
             chunkBaron.render(camXprjMatrix, camera.getPosition(), camera.getForwardsVector());
-            playerOne.render(pId, transformMatrixId, camXprjMatrix);
-            z1.render(pId, transformMatrixId, camXprjMatrix);
-            camera.renderTargetBlock(pId, transformMatrixId, camXprjMatrix);
+            playerOne.render(ShaderProgram.getDefaultProgramId(), ShaderProgram.getDefaultTransformMatrixId(), camXprjMatrix);
+            z1.render(ShaderProgram.getDefaultProgramId(), ShaderProgram.getDefaultTransformMatrixId(), camXprjMatrix);
+            camera.renderTargetBlock(ShaderProgram.getDefaultProgramId(), ShaderProgram.getDefaultTransformMatrixId(), camXprjMatrix);
 
             updateFPS();
             Text.draw(playerOne.toString(), 1, 90);
@@ -148,32 +149,6 @@ public class Game {
         chunkBaron.close();
         Display.destroy();
     }
-
-
-    private void setupDefaultShaders(String vertShader, String fragShader) {
-        int vsId = ShaderUtils.loadShader(vertShader, GL20.GL_VERTEX_SHADER);
-        int fsId = ShaderUtils.loadShader(fragShader, GL20.GL_FRAGMENT_SHADER);
-
-        pId = GL20.glCreateProgram();
-        GL20.glAttachShader(pId, vsId);
-        GL20.glAttachShader(pId, fsId);
-
-        GL20.glBindAttribLocation(pId, 0, "in_Position");
-
-        GL20.glLinkProgram(pId);
-
-        int status = GL20.glGetShaderi(pId, GL20.GL_LINK_STATUS);
-        if (status == GL11.GL_FALSE) {
-            System.out.println("ERROR: Shaders failed to link!");
-            System.exit(-1);
-        }
-
-        transformMatrixId = GL20.glGetUniformLocation(pId, "transformMatrix");
-
-        GL20.glDetachShader(pId, vsId);
-        GL20.glDetachShader(pId, fsId);
-    }
-
 
     /**
      * Get the time in milliseconds

@@ -3,32 +3,65 @@ package Entities;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class GameEntity implements Serializable, Comparable<GameEntity> {
 
-    private Vector3f position;
+    private int componentFlags;
     public int id;
+    private Vector3f position;
+    private ArrayList<Component> components;
 
-    /**
-     * Default constructor, should probably NEVER be used
-     */
-    public GameEntity(int id) {
-        position = new Vector3f(0,0,0);
-        this.id = id;
+    public GameEntity(int parId, Vector3f p) {
+        id = parId;
+        componentFlags = 0;
+        position = p;
+        components = new ArrayList<Component>();
     }
 
-    public GameEntity(int id, Vector3f p) {
-        this.id = id;
-        position = new Vector3f(p);
+    public GameEntity(int parId, float x, float y, float z) {
+        this(parId, new Vector3f(x,y,z));
     }
 
-    public GameEntity(int id, float x, float y, float z) {
-        this.id = id;
-        position = new Vector3f(x, y, z);
+    public void addComponent(Component comp) {
+        components.add(comp);
+        componentFlags = componentFlags | comp.getType();
+    }
+
+    public boolean hasComponent(int type) {
+        return (componentFlags & type) == type;
+    }
+
+    public Component getComponent(int type) {
+        for (Component x : components) {
+            if (x.getType() == type) {
+                return x;
+            }
+        }
+        return null;
+    }
+
+    public void removeComponent(int type) {
+        Component c = null;
+        for (Component x : components) {
+            if (x.getType() == type) {
+                c = x;
+                break;
+            }
+        }
+
+        if (c != null) {
+            components.remove(c);
+            componentFlags = componentFlags ^ type;
+        }
     }
 
     public Vector3f getPosition() {
-        return new Vector3f(position);
+        return position;
+    }
+
+    public void setPosition(Vector3f p) {
+        position = p;
     }
 
     @Override

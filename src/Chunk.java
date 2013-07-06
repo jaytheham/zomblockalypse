@@ -373,7 +373,6 @@ public class Chunk {
                         pXnZ = isBlockOpaque(x + 1, y + 1, z - 1);
                         nXpZ = isBlockOpaque(x + 1, y - 1, z + 1);
                         nXnZ = isBlockOpaque(x + 1, y - 1, z - 1);
-                        int pY = isBlockOpaque(x, y + 1, z);
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y + 1.0f));
@@ -447,28 +446,28 @@ public class Chunk {
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y + 1.0f));
-                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(12));
                         bufVertices.put((short)blockVal);
                         bufVertices.put((short)Math.max(pZ + pX, pXpZ));
 
                         bufVertices.put((short)(position[0] + x + 1.0f));
                         bufVertices.put((short)(position[1] + y));
-                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(12 + 32));
                         bufVertices.put((short)blockVal);
                         bufVertices.put((short)Math.max(nZ + pX, pXnZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y));
-                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(12 + 48));
                         bufVertices.put((short)blockVal);
                         bufVertices.put((short)Math.max(nZ + nX, nXnZ));
 
                         bufVertices.put((short)(position[0] + x));
                         bufVertices.put((short)(position[1] + y + 1.0f));
-                        bufVertices.put((short)(this.position[2] + z));
+                        bufVertices.put((short)(position[2] + z));
                         bufVertices.put((short)(12 + 16));
                         bufVertices.put((short)blockVal);
                         bufVertices.put((short)Math.max(pZ + nX, nXpZ));

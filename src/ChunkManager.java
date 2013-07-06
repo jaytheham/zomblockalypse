@@ -19,7 +19,7 @@ public class ChunkManager {
     private Player player;
     // The center (in world coordinates) of the chunk in the middle of active chunks
     // If the chunk in the middle is the one at 0,0,0, this will be 20,10,20
-    private Vector3i activeChunksCenterCenter;
+    private Vector3i activeChunksCenterPoint;
 
     private int programId;
     private int uniformTextureId;
@@ -44,22 +44,22 @@ public class ChunkManager {
 
         activeChunks = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
-        activeChunksCenterCenter = new Vector3i();
+        activeChunksCenterPoint = new Vector3i();
 
-        activeChunksCenterCenter.x = Chunk.CHUNK_WIDTH *
+        activeChunksCenterPoint.x = Chunk.CHUNK_WIDTH *
                 (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
-        activeChunksCenterCenter.y = Chunk.CHUNK_HEIGHT *
+        activeChunksCenterPoint.y = Chunk.CHUNK_HEIGHT *
                 (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
-        activeChunksCenterCenter.z = Chunk.CHUNK_WIDTH *
+        activeChunksCenterPoint.z = Chunk.CHUNK_WIDTH *
                 (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
 
         updateNullChunks(CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH);
 
         entityBaron = new EntityManager(CHUNKS_WIDE,
                 CHUNKS_HIGH,
-                activeChunksCenterCenter.x - Chunk.CHUNK_WIDTH / 2,
-                activeChunksCenterCenter.y - Chunk.CHUNK_HEIGHT / 2,
-                activeChunksCenterCenter.z - Chunk.CHUNK_WIDTH / 2);
+                activeChunksCenterPoint.x - Chunk.CHUNK_WIDTH / 2,
+                activeChunksCenterPoint.y - Chunk.CHUNK_HEIGHT / 2,
+                activeChunksCenterPoint.z - Chunk.CHUNK_WIDTH / 2);
     }
 
     public static ChunkManager getInstance(Player player) {
@@ -75,9 +75,9 @@ public class ChunkManager {
 
         float xC, yC, zC;
 
-        xC = (player.getX() - activeChunksCenterCenter.x) / Chunk.CHUNK_WIDTH;
-        yC = (player.getY() - activeChunksCenterCenter.y) / Chunk.CHUNK_HEIGHT;
-        zC = (player.getZ() - activeChunksCenterCenter.z) / Chunk.CHUNK_WIDTH;
+        xC = (player.getX() - activeChunksCenterPoint.x) / Chunk.CHUNK_WIDTH;
+        yC = (player.getY() - activeChunksCenterPoint.y) / Chunk.CHUNK_HEIGHT;
+        zC = (player.getZ() - activeChunksCenterPoint.z) / Chunk.CHUNK_WIDTH;
 
         // Only perform a load if player has moved 0.8/0.7 chunks from the center of the last
         // to prevent them flip-flopping between chunks and load thrashing
@@ -88,17 +88,17 @@ public class ChunkManager {
             //This is used as a buffer so no need to null any chunks
             Chunk[] activeChunksTempBuffer = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
-            activeChunksCenterCenter.x = Chunk.CHUNK_WIDTH *
+            activeChunksCenterPoint.x = Chunk.CHUNK_WIDTH *
                     (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
-            activeChunksCenterCenter.y = Chunk.CHUNK_HEIGHT *
+            activeChunksCenterPoint.y = Chunk.CHUNK_HEIGHT *
                     (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
-            activeChunksCenterCenter.z = Chunk.CHUNK_WIDTH *
+            activeChunksCenterPoint.z = Chunk.CHUNK_WIDTH *
                     (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
 
             entityBaron.centerChanged(
-                    activeChunksCenterCenter.x - Chunk.CHUNK_WIDTH / 2,
-                    activeChunksCenterCenter.y - Chunk.CHUNK_HEIGHT / 2,
-                    activeChunksCenterCenter.z - Chunk.CHUNK_WIDTH / 2);
+                    activeChunksCenterPoint.x - Chunk.CHUNK_WIDTH / 2,
+                    activeChunksCenterPoint.y - Chunk.CHUNK_HEIGHT / 2,
+                    activeChunksCenterPoint.z - Chunk.CHUNK_WIDTH / 2);
 
             xChange = (int)(xC * 2);
             yChange = (int)(yC * 2);
@@ -231,9 +231,9 @@ public class ChunkManager {
 
     /**
      * Return the value of the block at the given world coordinates.
-     * @param x
-     * @param y
-     * @param z
+     * @param x X coordinate of block
+     * @param y Y coordinate of block
+     * @param z Z coordinate of block
      * @return the value of the block, or 0 if the chunk is not loaded.
      */
     public int getBlock(int x, int y, int z) {
@@ -353,7 +353,7 @@ public class ChunkManager {
                                 x - (CHUNKS_WIDE / 2),
                                 y - (CHUNKS_HIGH / 2),
                                 z - (CHUNKS_WIDE / 2),
-                                activeChunksCenterCenter);
+                                activeChunksCenterPoint);
                         i++;
                         if (i == maxChunksToLoad)
                             return;
@@ -424,12 +424,15 @@ public class ChunkManager {
         GL13.glActiveTexture(0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
 
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
+
         Utilities.TextureLoader.loadPNG("res/block_textures.png", GL11.GL_RGB);
+
+        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 
 
         // Unbind stuff?
@@ -437,6 +440,8 @@ public class ChunkManager {
     }
 
     public void render(Matrix4f perspectiveMatrix, Vector3f camPosition, Vector3f camDirection) {
+
+        entityBaron.drawModels(perspectiveMatrix);
 
         FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
         FloatBuffer lights = entityBaron.getLights(player.getPosition());
