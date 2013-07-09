@@ -63,8 +63,6 @@ public class Game {
         ShaderProgram shaders = new ShaderProgram();
         setupPerspectiveMatrix();
 
-        Zombie z1 = new Zombie(new Vector3f(8.0f, 4.0f, 4.0f));
-
         Vector3f savedPlayerPos = loadSave();
         SphericalCamera cameraFPS = new SphericalCamera(new Vector3f(0,1,0), savedPlayerPos);
         SphericalCamera cameraChase = new SphericalChaseCamera(savedPlayerPos);
@@ -72,7 +70,6 @@ public class Game {
 
         ChunkManager chunkBaron = ChunkManager.getInstance(savedPlayerPos);
         EntityManager entityBaron = EntityManager.getInstance();
-        Collider collider = new Collider();
 
         Text.init("res/Font1.png");
 
@@ -96,8 +93,6 @@ public class Game {
                     (Mouse.getY() - mouseLastY)/(float)Display.getHeight(), timeDelta);
             mouseLastX = Mouse.getX();
             mouseLastY = Mouse.getY();
-
-            //z1.update(playerOne.getPosition(), timeDelta);
 
 
             while (Mouse.next()) {
@@ -136,13 +131,11 @@ public class Game {
                 }
             }
 
-            collider.collide(z1);
             entityBaron.update();
             chunkBaron.update();
 
             Matrix4f.mul(projectionMatrix, camera.getMatrix(), camXprjMatrix);
             chunkBaron.render(camXprjMatrix, camera.getPosition(), camera.getForwardsVector());
-            z1.render(ShaderProgram.getDefaultProgramId(), ShaderProgram.getDefaultTransformMatrixId(), camXprjMatrix);
             camera.renderTargetBlock(ShaderProgram.getDefaultProgramId(), ShaderProgram.getDefaultTransformMatrixId(), camXprjMatrix);
 
             updateFPS();
@@ -230,7 +223,7 @@ public class Game {
         float aspectRatio = Display.getWidth() / (float)Display.getHeight();
         float nearPlane = 0.5f;
         float farPlane = 300.0f;
-        float yScale = (float)coTangent(Math.toRadians((fieldOfView / 2.0f)));
+        float yScale = coTangent(Math.toRadians((fieldOfView / 2.0f)));
 
         projectionMatrix.m00 = yScale / aspectRatio;
         projectionMatrix.m11 = yScale;

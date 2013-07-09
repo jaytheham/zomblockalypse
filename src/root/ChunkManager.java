@@ -435,7 +435,7 @@ public class ChunkManager {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
 
-        root.Utilities.TextureLoader.loadPNG("res/block_textures.png", GL11.GL_RGB);
+        root.Utilities.TextureLoader.loadPNG(Constants.BLOCK_TEXTURES_PATH, GL11.GL_RGB);
 
         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 
@@ -450,7 +450,7 @@ public class ChunkManager {
 
         FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
         FloatBuffer lights = entityBaron.getLights(Game.camera.playerPosition);
-        
+
         perspectiveMatrix.store(matrixBuffer);
         matrixBuffer.flip();
 

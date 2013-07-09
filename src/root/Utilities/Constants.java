@@ -16,5 +16,7 @@ public class Constants {
 
     public static final float ONE_METRE_IN_UNITS = 4.0f;
 
-    public static final String BLOCK_TEXTURES_FILE_PATH = "res/block_textures.png";
+    public static final int PLAYER_ID = 0;
+
+    public static final String BLOCK_TEXTURES_PATH = "res/block_textures.png";
 }

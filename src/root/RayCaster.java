@@ -10,9 +10,8 @@ public class RayCaster {
      * @param direction The direction the ray is moving.
      * @param radius The maximum distance the ray will travel.
      * @return The position and face of the block hit, or null if no block is hit.
-     * @throws Exception
      */
-    static int[] getIntercept(Vector3f origin, Vector3f direction, float radius) {
+    public static int[] getIntercept(Vector3f origin, Vector3f direction, float radius) {
 
         ChunkManager cm = ChunkManager.getInstance(null);
 

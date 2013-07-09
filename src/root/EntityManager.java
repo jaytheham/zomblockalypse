@@ -25,7 +25,7 @@ public class EntityManager {
     private static EntityManager instance;
     private DB db;
     NavigableSet<Fun.Tuple2<Vector3i, GameEntity>> multiMap;
-    List<GameEntity> entities;
+    private static List<GameEntity> entities;
     ModelManager modelBaron;
     private int nextFreeId;
 
@@ -73,7 +73,7 @@ public class EntityManager {
             // Put into database
 
             //player: should be id 0
-            GameEntity player = new GameEntity(0, 0, 2.5f, 0);
+            GameEntity player = new GameEntity(Constants.PLAYER_ID, 0, 2.5f, 0);
             player.addComponent(new CmpSelfMovement(new Vector3f(player.getPosition()), new ProcessMovePlayer()));
             player.addComponent(new CmpModel("res/items/Test_Player.mdl"));
             player.addComponent(new CmpCollision(1, 6, new Vector3f(2,7,2), new ProcessCollide()));
@@ -93,8 +93,9 @@ public class EntityManager {
 
             //zombie
             GameEntity testZombie = new GameEntity(nextFreeId++, 9, 2, 6);
-            //testZombie.addComponent(new CmpMovement( new Vector3f(testZombie.getPosition()), new ProcessMoveZombie()));
+            testZombie.addComponent(new CmpSelfMovement( new Vector3f(testZombie.getPosition()), new ProcessMoveZombie()));
             testZombie.addComponent(new CmpModel("res/items/Test_Zombie.mdl"));
+            testZombie.addComponent(new CmpCollision(1, 4, new Vector3f(2,7,2), new ProcessCollide()));
 
             multiMap.add(Fun.t2(new Vector3i(0,0,0), player));
             multiMap.add(Fun.t2(new Vector3i(0,0,0), testItem));
@@ -141,12 +142,14 @@ public class EntityManager {
                             (int)e.getPosition().x / Chunk.CHUNK_WIDTH * Chunk.CHUNK_WIDTH,
                             (int)e.getPosition().y / Chunk.CHUNK_HEIGHT * Chunk.CHUNK_HEIGHT,
                             (int)e.getPosition().z / Chunk.CHUNK_WIDTH * Chunk.CHUNK_WIDTH), e));
+                    modelBaron.removeModel(((CmpModel)e.getComponent(ComponentType.MODEL)).modelPath);
                     it.remove();
                 }
             }
         }
 
         // Load in entities from newly loaded chunks
+        // Should be able to speed this up by only checking chunks that are actually new?
         Vector3i cPos = new Vector3i();
         for (cPos.x = (int)minCoords.x; cPos.x < maxCoords.x; cPos.x += Chunk.CHUNK_WIDTH) {
             for (cPos.y = (int)minCoords.y; cPos.y < maxCoords.y; cPos.y += Chunk.CHUNK_HEIGHT) {
@@ -193,6 +196,15 @@ public class EntityManager {
         ArrayList<Integer> types = new ArrayList<Integer>();
         types.add(type);
         return getEntities(types);
+    }
+
+    public static GameEntity getPlayer() {
+        for (GameEntity e : entities) {
+            if (e.id == Constants.PLAYER_ID) {
+                return e;
+            }
+        }
+        return null;
     }
 
     public void update() {
@@ -269,7 +281,10 @@ public class EntityManager {
                 org.lwjgl.util.vector.Matrix4f worldMatrix = new Matrix4f();
 
                 worldMatrix.translate(e.getPosition());
-                //worldMatrix.rotate((float)Math.toRadians((double)-yaw), new Vector3f(0.0f, 1.0f, 0.0f));
+                if (e.hasComponent(ComponentType.MOVEMENT)) {
+                    CmpMovement g = (CmpMovement)e.getComponent(ComponentType.MOVEMENT);
+                    worldMatrix.rotate((float)Math.toRadians((double)-g.rotation.y), new Vector3f(0.0f, 1.0f, 0.0f));
+                }
                 org.lwjgl.util.vector.Matrix4f.mul(perspectiveMatrix, worldMatrix, worldMatrix);
                 matrixBuffer.position(0);
                 worldMatrix.store(matrixBuffer);
@@ -303,7 +318,7 @@ public class EntityManager {
         multiMap = db.getTreeSet("EntityDatabase");
 
         for (GameEntity e : entities) {
-            if (e.id == 0) {
+            if (e.id == Constants.PLAYER_ID) {
                 pos = e.getPosition();
             }
             multiMap.add(Fun.t2(new Vector3i(

@@ -4,8 +4,6 @@ import org.lwjgl.util.vector.Vector3f;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 
 public class GameEntity implements Serializable, Comparable<GameEntity> {
 
@@ -72,6 +70,5 @@ public class GameEntity implements Serializable, Comparable<GameEntity> {
         if (this.id < e.id) return -1;
         if (this.id == e.id) return 0;
         return 1;
-
     }
 }
