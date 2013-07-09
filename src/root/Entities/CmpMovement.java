@@ -8,9 +8,14 @@ public class CmpMovement extends Component implements Serializable {
 
     public Vector3f nextPosition;
     public Vector3f rotation;
-    public Vector3f target;
     public Vector3f velocity;
-    public float maxVelocity;
+
+    public CmpMovement() {
+        type = ComponentType.MOVEMENT;
+        nextPosition = new Vector3f();
+        rotation = new Vector3f();
+        velocity = new Vector3f();
+    }
 
     /**
      * Constructor.

@@ -1,6 +1,5 @@
 package root;
 
-import root.Entities.ComponentType;
 import root.Utilities.*;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -10,6 +9,11 @@ import org.lwjgl.Sys;
 
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 public class Game {
 
@@ -21,6 +25,7 @@ public class Game {
     private int lastFps = 0;
     private long lastFrameTime = 0;
     public static int timeDelta;
+    public static SphericalCamera camera;
 
     //View
     public static Matrix4f projectionMatrix;
@@ -58,19 +63,24 @@ public class Game {
         ShaderProgram shaders = new ShaderProgram();
         setupPerspectiveMatrix();
 
-        Player playerOne = new Player();
         Zombie z1 = new Zombie(new Vector3f(8.0f, 4.0f, 4.0f));
 
-        SphericalCamera cameraFPS = new SphericalCamera(new Vector3f(0,1,0));
-        SphericalCamera cameraChase = new SphericalChaseCamera(playerOne);
-        SphericalCamera camera = cameraChase;
+        Vector3f savedPlayerPos = loadSave();
+        SphericalCamera cameraFPS = new SphericalCamera(new Vector3f(0,1,0), savedPlayerPos);
+        SphericalCamera cameraChase = new SphericalChaseCamera(savedPlayerPos);
+        camera = cameraChase;
 
-        ChunkManager chunkBaron = ChunkManager.getInstance(playerOne);
+        ChunkManager chunkBaron = ChunkManager.getInstance(savedPlayerPos);
         EntityManager entityBaron = EntityManager.getInstance();
         Collider collider = new Collider();
 
         Text.init("res/Font1.png");
 
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            System.out.println("Errmagerd, failed to sleep");
+        }
 
         previousFrameTime = Sys.getTime();
         while(!Display.isCloseRequested()) {
@@ -87,8 +97,7 @@ public class Game {
             mouseLastX = Mouse.getX();
             mouseLastY = Mouse.getY();
 
-            z1.update(playerOne.getPosition(), timeDelta);
-            playerOne.move(timeDelta);
+            //z1.update(playerOne.getPosition(), timeDelta);
 
 
             while (Mouse.next()) {
@@ -127,28 +136,62 @@ public class Game {
                 }
             }
 
-            collider.collide(playerOne);
             collider.collide(z1);
             entityBaron.update();
-
             chunkBaron.update();
 
             Matrix4f.mul(projectionMatrix, camera.getMatrix(), camXprjMatrix);
             chunkBaron.render(camXprjMatrix, camera.getPosition(), camera.getForwardsVector());
-            playerOne.render(ShaderProgram.getDefaultProgramId(), ShaderProgram.getDefaultTransformMatrixId(), camXprjMatrix);
             z1.render(ShaderProgram.getDefaultProgramId(), ShaderProgram.getDefaultTransformMatrixId(), camXprjMatrix);
             camera.renderTargetBlock(ShaderProgram.getDefaultProgramId(), ShaderProgram.getDefaultTransformMatrixId(), camXprjMatrix);
 
             updateFPS();
-            Text.draw(playerOne.toString(), 1, 90);
+            Text.draw(String.format("%5.1f %5.1f %5.1f",
+                    camera.playerPosition.x,
+                    camera.playerPosition.y,
+                    camera.playerPosition.z), 1, 90);
             Display.update();
         }
 
         // Should clear buffers and textures off the GPU here
+        save(entityBaron.closeDatabase());
         ChunkLoader.close();
         ChunkSaver.close();
-        chunkBaron.close();
         Display.destroy();
+    }
+
+    private Vector3f loadSave() {
+        Vector3f playerPosition = new Vector3f();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("res/Save.txt"));
+            String[] data = br.readLine().split(" ");
+
+            playerPosition.x = Float.parseFloat(data[1]);
+            playerPosition.y = Float.parseFloat(data[2]);
+            playerPosition.z = Float.parseFloat(data[3]);
+            br.close();
+
+        } catch (Exception e) {
+            System.out.println("Error loading save file");
+        }
+        return playerPosition;
+    }
+
+    private void save(Vector3f playerPosition) {
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter("res/Save.txt"));
+            bw.write("0 ");
+            bw.write(Float.toString(playerPosition.x));
+            bw.write(" ");
+            bw.write(Float.toString(playerPosition.y));
+            bw.write(" ");
+            bw.write(Float.toString(playerPosition.z));
+            bw.flush();
+            bw.close();
+
+        } catch (Exception e) {
+            System.out.println("Error loading save file");
+        }
     }
 
     /**

@@ -19,6 +19,7 @@ public class SphericalCamera {
     protected double pitch;
     protected double yaw;
     protected Vector3f position;
+    protected Vector3f playerPosition;
     private Matrix4f matrix;
 
     protected int vbo;
@@ -32,18 +33,26 @@ public class SphericalCamera {
         position = new Vector3f(0,0,0);
         matrix = new Matrix4f();
         vbo = GL15.glGenBuffers();
+        playerPosition = new Vector3f();
     }
 
-    public SphericalCamera(Vector3f p) {
+    public SphericalCamera(Vector3f pos, Vector3f playerPos) {
         pitch = 0.0;
         yaw = 0.0;
-        position = p;
+        position = pos;
         matrix = new Matrix4f();
+        playerPosition = playerPos;
         vbo = GL15.glGenBuffers();
     }
 
     public void setPosition(Vector3f p) {
         position = p;
+    }
+
+    public void updatePlayerPosition(Vector3f p) {
+        playerPosition.x = p.x;
+        playerPosition.y = p.y;
+        playerPosition.z = p.z;
     }
 
     public void changeYaw(float change) {
@@ -109,6 +118,7 @@ public class SphericalCamera {
             uVector.negate();
             Vector3f.add(position, uVector, position);
         }
+
     }
 
     public Vector3f getForwardsVector() {
@@ -144,6 +154,10 @@ public class SphericalCamera {
         return pVector;
     }
 
+    /**
+     * Returns a vector to the center of the view rather than the mouse position.
+     * @return
+     */
     public Vector3f getRayToMousePosition() {
         return getForwardsVector();
     }

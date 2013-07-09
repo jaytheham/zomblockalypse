@@ -18,7 +18,6 @@ public class ChunkManager {
     public static final int CHUNKS_HIGH = 3;
 
     private Chunk[] activeChunks;
-    private Player player;
     // The center (in world coordinates) of the chunk in the middle of active chunks
     // If the chunk in the middle is the one at 0,0,0, this will be 20,10,20
     private static Vector3i activeChunksCenterPoint;
@@ -38,8 +37,7 @@ public class ChunkManager {
     private EntityManager entityBaron;
 
 
-    protected ChunkManager(Player newPlayer) {
-        player = newPlayer;
+    protected ChunkManager(Vector3f playerPosition) {
 
         setupShader("Shaders/BlockVertex.glsl", "Shaders/BlockFragment.glsl");
 
@@ -48,11 +46,11 @@ public class ChunkManager {
         activeChunksCenterPoint = new Vector3i();
 
         activeChunksCenterPoint.x = Chunk.CHUNK_WIDTH *
-                (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
+                (int)Math.floor(playerPosition.getX() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
         activeChunksCenterPoint.y = Chunk.CHUNK_HEIGHT *
-                (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
+                (int)Math.floor(playerPosition.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
         activeChunksCenterPoint.z = Chunk.CHUNK_WIDTH *
-                (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
+                (int)Math.floor(playerPosition.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
 
         EntityManager.init(
                 CHUNKS_WIDE,
@@ -65,9 +63,9 @@ public class ChunkManager {
         updateNullChunks(CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH);
     }
 
-    public static ChunkManager getInstance(Player player) {
+    public static ChunkManager getInstance(Vector3f pp) {
         if (instance == null) {
-            instance = new ChunkManager(player);
+            instance = new ChunkManager(pp);
         }
         return instance;
     }
@@ -82,9 +80,9 @@ public class ChunkManager {
 
         float xC, yC, zC;
 
-        xC = (player.getX() - activeChunksCenterPoint.x) / Chunk.CHUNK_WIDTH;
-        yC = (player.getY() - activeChunksCenterPoint.y) / Chunk.CHUNK_HEIGHT;
-        zC = (player.getZ() - activeChunksCenterPoint.z) / Chunk.CHUNK_WIDTH;
+        xC = (Game.camera.playerPosition.getX() - activeChunksCenterPoint.x) / Chunk.CHUNK_WIDTH;
+        yC = (Game.camera.playerPosition.getY() - activeChunksCenterPoint.y) / Chunk.CHUNK_HEIGHT;
+        zC = (Game.camera.playerPosition.getZ() - activeChunksCenterPoint.z) / Chunk.CHUNK_WIDTH;
 
         // Only perform a load if player has moved 0.8/0.7 chunks from the center of the last
         // to prevent them flip-flopping between chunks and load thrashing
@@ -96,11 +94,11 @@ public class ChunkManager {
             Chunk[] activeChunksTempBuffer = new Chunk[CHUNKS_WIDE * CHUNKS_WIDE * CHUNKS_HIGH];
 
             activeChunksCenterPoint.x = Chunk.CHUNK_WIDTH *
-                    (int)Math.floor(player.getX() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
+                    (int)Math.floor(Game.camera.playerPosition.getX() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
             activeChunksCenterPoint.y = Chunk.CHUNK_HEIGHT *
-                    (int)Math.floor(player.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
+                    (int)Math.floor(Game.camera.playerPosition.getY() / Chunk.CHUNK_HEIGHT) + (Chunk.CHUNK_HEIGHT / 2);
             activeChunksCenterPoint.z = Chunk.CHUNK_WIDTH *
-                    (int)Math.floor(player.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
+                    (int)Math.floor(Game.camera.playerPosition.getZ() / Chunk.CHUNK_WIDTH) + (Chunk.CHUNK_WIDTH / 2);
 
             entityBaron.centerChanged(
                     activeChunksCenterPoint.x - Chunk.CHUNK_WIDTH / 2,
@@ -388,7 +386,7 @@ public class ChunkManager {
     }
 
     private void saveChunk(Chunk c) {
-        if (c.hasUnsavedChanges() && c.isLoaded()) {
+        if (c.isLoaded() && c.hasUnsavedChanges()) {
             ChunkSaver saver = new ChunkSaver(c);
             saver.save();
         }
@@ -451,7 +449,8 @@ public class ChunkManager {
         entityBaron.drawModels(perspectiveMatrix);
 
         FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
-        FloatBuffer lights = entityBaron.getLights(player.getPosition());
+        FloatBuffer lights = entityBaron.getLights(Game.camera.playerPosition);
+        
         perspectiveMatrix.store(matrixBuffer);
         matrixBuffer.flip();
 
@@ -486,9 +485,5 @@ public class ChunkManager {
         }
 
         GL20.glUseProgram(0);
-    }
-
-    public void close() {
-        entityBaron.closeDatabase();
     }
 }

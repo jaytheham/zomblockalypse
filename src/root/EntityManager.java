@@ -48,7 +48,7 @@ public class EntityManager {
     private EntityManager(int w, int h, int x, int y, int z) {
 
         db = DBMaker.newFileDB(new File("res/database")).make();
-        nextFreeId = 0;
+        nextFreeId = 1;
         chunksHigh = h;
         chunksWide = w;
 
@@ -59,36 +59,51 @@ public class EntityManager {
             centerChanged(x,y,z);
         }
         else {
-        // Recreate database
-        NavigableSet<Fun.Tuple2<Vector3i, GameEntity>> multiMap = db.createTreeSet("EntityDatabase",32,false, BTreeKeySerializer.TUPLE2, null);
+            // Recreate database
+            NavigableSet<Fun.Tuple2<Vector3i, GameEntity>> multiMap = db.createTreeSet("EntityDatabase",32,false, BTreeKeySerializer.TUPLE2, null);
 
-        // Open database
-        //NavigableSet<Fun.Tuple2<Vector3i, GameEntity>> multiMap = db.getTreeSet("EntityDatabase");
+            // Open database
+            //NavigableSet<Fun.Tuple2<Vector3i, GameEntity>> multiMap = db.getTreeSet("EntityDatabase");
 
-        // Remove from database
-        //for (GameEntity e : Bind.findSecondaryKeys(multiMap, new Vector3i(0,0,0))) {
-        //    multiMap.remove(Fun.t2(new Vector3i(0,0,0),e));
-        //}
+            // Remove from database
+            //for (GameEntity e : Bind.findSecondaryKeys(multiMap, new Vector3i(0,0,0))) {
+            //    multiMap.remove(Fun.t2(new Vector3i(0,0,0),e));
+            //}
 
-        // Put into database
-        GameEntity testItem = new GameEntity(0, 3.4f, 3f, 3.5f);
-        testItem.addComponent(new CmpMovement( new Vector3f(testItem.getPosition()), new ProcessMoveItem()));
-        testItem.addComponent(new CmpModel("res/items/Test.mdl"));
+            // Put into database
 
-        GameEntity light1 = new GameEntity(1, 3, 7, 3);
-        light1.addComponent(new CmpPointLight(1,0.8f,0.7f,20));
-        light1.addComponent(new CmpModel("res/items/Test.mdl"));
+            //player: should be id 0
+            GameEntity player = new GameEntity(0, 0, 2.5f, 0);
+            player.addComponent(new CmpSelfMovement(new Vector3f(player.getPosition()), new ProcessMovePlayer()));
+            player.addComponent(new CmpModel("res/items/Test_Player.mdl"));
+            player.addComponent(new CmpCollision(1, 6, new Vector3f(2,7,2), new ProcessCollide()));
 
-        GameEntity light2 = new GameEntity(2, 25, 7, 15);
-        light2.addComponent(new CmpPointLight(0, 0.8f, 0.7f, 15));
-        light2.addComponent(new CmpModel("res/items/Test.mdl"));
+            GameEntity testItem = new GameEntity(nextFreeId++, 3.4f, 3f, 3.5f);
+            testItem.addComponent(new CmpMovement( new Vector3f(testItem.getPosition()), new ProcessMoveItem()));
+            testItem.addComponent(new CmpModel("res/items/Test.mdl"));
+            testItem.addComponent(new CmpCollision(0,0, new Vector3f(0.5f,0.5f,0.5f), new ProcessCollide()));
 
-        multiMap.add(Fun.t2(new Vector3i(0,0,0), testItem));
-        multiMap.add(Fun.t2(new Vector3i(0,0,0), light1));
-        multiMap.add(Fun.t2(new Vector3i(0,0,0), light2));
+            GameEntity light1 = new GameEntity(nextFreeId++, 3, 7, 3);
+            light1.addComponent(new CmpPointLight(1,0.8f,0.7f,20));
+            light1.addComponent(new CmpModel("res/items/Test.mdl"));
 
-        db.commit();
-        db.close();
+            GameEntity light2 = new GameEntity(nextFreeId++, 25, 7, 15);
+            light2.addComponent(new CmpPointLight(0, 0.8f, 0.7f, 15));
+            light2.addComponent(new CmpModel("res/items/Test.mdl"));
+
+            //zombie
+            GameEntity testZombie = new GameEntity(nextFreeId++, 9, 2, 6);
+            //testZombie.addComponent(new CmpMovement( new Vector3f(testZombie.getPosition()), new ProcessMoveZombie()));
+            testZombie.addComponent(new CmpModel("res/items/Test_Zombie.mdl"));
+
+            multiMap.add(Fun.t2(new Vector3i(0,0,0), player));
+            multiMap.add(Fun.t2(new Vector3i(0,0,0), testItem));
+            multiMap.add(Fun.t2(new Vector3i(0,0,0), light1));
+            multiMap.add(Fun.t2(new Vector3i(0,0,0), light2));
+            multiMap.add(Fun.t2(new Vector3i(0,0,0), testZombie));
+
+            db.commit();
+            db.close();
         }
     }
 
@@ -214,6 +229,7 @@ public class EntityManager {
         }
 
         BufferUtils.zeroBuffer(lightBuffer);
+        lightBuffer.position(0);
 
         CmpPointLight l;
         if (!lights.isEmpty()) {
@@ -232,6 +248,7 @@ public class EntityManager {
                 lightBuffer.put(l.color.z);
                 lightBuffer.put(l.intensity);
             }
+            lightBuffer.position(Constants.MAX_NUM_LIGHTS * 7);
             lightBuffer.flip();
         }
 
@@ -275,19 +292,29 @@ public class EntityManager {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
-    public void closeDatabase() {
+    /**
+     * Save all loaded entities into the database.
+     * @return the current position of the player entity
+     */
+    public Vector3f closeDatabase() {
+
+        Vector3f pos = new Vector3f();
 
         multiMap = db.getTreeSet("EntityDatabase");
 
         for (GameEntity e : entities) {
+            if (e.id == 0) {
+                pos = e.getPosition();
+            }
             multiMap.add(Fun.t2(new Vector3i(
-                    (int)e.getPosition().x / Chunk.CHUNK_WIDTH * Chunk.CHUNK_WIDTH,
-                    (int)e.getPosition().y / Chunk.CHUNK_HEIGHT * Chunk.CHUNK_HEIGHT,
-                    (int)e.getPosition().z / Chunk.CHUNK_WIDTH * Chunk.CHUNK_WIDTH), e));
+                    (int) e.getPosition().x / Chunk.CHUNK_WIDTH * Chunk.CHUNK_WIDTH,
+                    (int) e.getPosition().y / Chunk.CHUNK_HEIGHT * Chunk.CHUNK_HEIGHT,
+                    (int) e.getPosition().z / Chunk.CHUNK_WIDTH * Chunk.CHUNK_WIDTH), e));
         }
 
         entities.clear();
         db.commit();
         db.close();
+        return pos;
     }
 }
